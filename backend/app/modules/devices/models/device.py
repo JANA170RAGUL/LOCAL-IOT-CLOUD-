@@ -11,7 +11,12 @@ from datetime import datetime
 from sqlalchemy import DateTime, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from typing import TYPE_CHECKING
+
 from app.database.base import BaseModel
+
+if TYPE_CHECKING:
+    from app.modules.sensors.models.sensor import Sensor
 
 
 class Device(BaseModel):
@@ -112,3 +117,11 @@ class Device(BaseModel):
         "Gateway",
         back_populates="devices",
     )
+
+    sensors: Mapped[list[Sensor]] = relationship(
+        "Sensor",
+        back_populates="device",
+        cascade="all, delete-orphan",
+        lazy="select",
+    )
+

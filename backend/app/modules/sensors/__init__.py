@@ -2,14 +2,8 @@
 app/modules/sensors
 
 Sensor definitions and configuration attached to devices.
-
-As the module is implemented, update this file to re-export:
-    - router        (FastAPI router)
-    - ORM models
-    - Pydantic schemas
-    - Service class
 """
 
-from app.modules.sensors.api.router import router
+from app.modules.sensors.api.sensor_router import router
 
 __all__ = ["router"]

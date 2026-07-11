@@ -1,5 +1,5 @@
-"""app/modules/sensors/models package.
+"""app/modules/sensors/models package."""
 
-Import ORM models here once defined, e.g.:
-    from app.modules.sensors.models.sensor import Sensor
-"""
+from app.modules.sensors.models.sensor import Sensor
+
+__all__ = ["Sensor"]

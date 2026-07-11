@@ -1,5 +1,19 @@
-"""app/modules/sensors/schemas package.
+"""app/modules/sensors/schemas package."""
 
-Import Pydantic schemas here once defined, e.g.:
-    from app.modules.sensors.schemas.sensor import SensorCreate, SensorResponse
-"""
+from app.modules.sensors.schemas.sensor import (
+    SensorCreate,
+    SensorFilter,
+    SensorListResponse,
+    SensorResponse,
+    SensorSummary,
+    SensorUpdate,
+)
+
+__all__ = [
+    "SensorCreate",
+    "SensorFilter",
+    "SensorListResponse",
+    "SensorResponse",
+    "SensorSummary",
+    "SensorUpdate",
+]
