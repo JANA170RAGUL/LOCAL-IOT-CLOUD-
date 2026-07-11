@@ -13,6 +13,7 @@ actual implementation.
 | Organization | ✅ v1.0 | [organization.md](./organization.md) |
 | Tenant | ✅ v1.0 | [tenant.md](./tenant.md) |
 | Project | ✅ v1.0 | [project.md](./project.md) |
+| Gateway | ✅ v1.0 | [gateway.md](./gateway.md) |
 
 ---
 
@@ -23,7 +24,6 @@ actual implementation.
 | Authentication | 📋 Planned |
 | User | 📋 Planned |
 | Device | 📋 Planned |
-| Gateway | 📋 Planned |
 | Sensor | 📋 Planned |
 | Telemetry | 📋 Planned |
 | Alert | 📋 Planned |

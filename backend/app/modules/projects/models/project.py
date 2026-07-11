@@ -10,7 +10,12 @@ from __future__ import annotations
 from sqlalchemy import ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from typing import TYPE_CHECKING
+
 from app.database.base import BaseModel
+
+if TYPE_CHECKING:
+    from app.modules.gateways.models.gateway import Gateway
 
 
 class Project(BaseModel):
@@ -65,3 +70,11 @@ class Project(BaseModel):
         "Tenant",
         back_populates="projects",
     )
+
+    gateways: Mapped[list[Gateway]] = relationship(
+        "Gateway",
+        back_populates="project",
+        cascade="all, delete-orphan",
+        lazy="select",
+    )
+

@@ -1,5 +1,5 @@
-"""app/modules/gateways/models package.
+"""app/modules/gateways/models package."""
 
-Import ORM models here once defined, e.g.:
-    from app.modules.gateways.models.gateway import Gateway
-"""
+from app.modules.gateways.models.gateway import Gateway
+
+__all__ = ["Gateway"]
