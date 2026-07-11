@@ -1,5 +1,5 @@
-"""app/modules/devices/models package.
+"""app/modules/devices/models package."""
 
-Import ORM models here once defined, e.g.:
-    from app.modules.devices.models.device import Device
-"""
+from app.modules.devices.models.device import Device
+
+__all__ = ["Device"]

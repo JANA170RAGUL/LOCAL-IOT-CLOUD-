@@ -1,5 +1,5 @@
 """app/modules/devices/api package."""
 
-from app.modules.devices.api.router import router
+from app.modules.devices.api.device_router import router
 
 __all__ = ["router"]

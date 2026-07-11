@@ -14,6 +14,7 @@ actual implementation.
 | Tenant | ✅ v1.0 | [tenant.md](./tenant.md) |
 | Project | ✅ v1.0 | [project.md](./project.md) |
 | Gateway | ✅ v1.0 | [gateway.md](./gateway.md) |
+| Device | ✅ v1.0 | [device.md](./device.md) |
 
 ---
 
@@ -23,7 +24,6 @@ actual implementation.
 |---|---|
 | Authentication | 📋 Planned |
 | User | 📋 Planned |
-| Device | 📋 Planned |
 | Sensor | 📋 Planned |
 | Telemetry | 📋 Planned |
 | Alert | 📋 Planned |

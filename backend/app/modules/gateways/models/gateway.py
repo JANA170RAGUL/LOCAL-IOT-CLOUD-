@@ -11,7 +11,12 @@ from datetime import datetime
 from sqlalchemy import DateTime, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from typing import TYPE_CHECKING
+
 from app.database.base import BaseModel
+
+if TYPE_CHECKING:
+    from app.modules.devices.models.device import Device
 
 
 class Gateway(BaseModel):
@@ -105,3 +110,11 @@ class Gateway(BaseModel):
         "Project",
         back_populates="gateways",
     )
+
+    devices: Mapped[list[Device]] = relationship(
+        "Device",
+        back_populates="gateway",
+        cascade="all, delete-orphan",
+        lazy="select",
+    )
+
