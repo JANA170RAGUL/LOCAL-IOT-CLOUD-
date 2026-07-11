@@ -29,7 +29,12 @@ from __future__ import annotations
 from sqlalchemy import ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from typing import TYPE_CHECKING
+
 from app.database.base import BaseModel
+
+if TYPE_CHECKING:
+    from app.modules.projects.models.project import Project
 
 
 class Tenant(BaseModel):
@@ -137,3 +142,11 @@ class Tenant(BaseModel):
         "Organization",
         back_populates="tenants",
     )
+
+    projects: Mapped[list[Project]] = relationship(
+        "Project",
+        back_populates="tenant",
+        cascade="all, delete-orphan",
+        lazy="select",
+    )
+

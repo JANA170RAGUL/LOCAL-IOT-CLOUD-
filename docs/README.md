@@ -12,6 +12,7 @@ actual implementation.
 |---|---|---|
 | Organization | ✅ v1.0 | [organization.md](./organization.md) |
 | Tenant | ✅ v1.0 | [tenant.md](./tenant.md) |
+| Project | ✅ v1.0 | [project.md](./project.md) |
 
 ---
 

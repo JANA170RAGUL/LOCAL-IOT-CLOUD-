@@ -25,6 +25,7 @@ if config.config_file_name is not None:
 # target_metadata = mymodel.Base.metadata
 from app.modules.organizations.models.organization import Organization  # noqa: F401
 from app.modules.tenants.models.tenant import Tenant  # noqa: F401
+from app.modules.projects.models.project import Project  # noqa: F401
 
 target_metadata = Base.metadata
 # other values from the config, defined by the needs of env.py,
