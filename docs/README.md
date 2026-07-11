@@ -16,6 +16,7 @@ actual implementation.
 | Gateway | ✅ v1.0 | [gateway.md](./gateway.md) |
 | Device | ✅ v1.0 | [device.md](./device.md) |
 | Sensor | ✅ v1.0 | [sensor.md](./sensor.md) |
+| Telemetry | ✅ v1.0 | [telemetry.md](./telemetry.md) |
 
 ---
 
@@ -25,7 +26,6 @@ actual implementation.
 |---|---|
 | Authentication | 📋 Planned |
 | User | 📋 Planned |
-| Telemetry | 📋 Planned |
 | Alert | 📋 Planned |
 | Rule | 📋 Planned |
 | Dashboard | 📋 Planned |

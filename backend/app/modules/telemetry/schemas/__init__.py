@@ -1,5 +1,13 @@
-"""app/modules/telemetry/schemas package.
+"""app/modules/telemetry/schemas package."""
 
-Import Pydantic schemas here once defined, e.g.:
-    from app.modules.telemetry.schemas.telemetry import TelemetryCreate, TelemetryResponse
-"""
+from app.modules.telemetry.schemas.telemetry import (
+    TelemetryHistoryResponse,
+    TelemetryLatestResponse,
+    TelemetryPointResponse,
+)
+
+__all__ = [
+    "TelemetryHistoryResponse",
+    "TelemetryLatestResponse",
+    "TelemetryPointResponse",
+]
