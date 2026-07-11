@@ -26,7 +26,7 @@ Coverage
 
 import pytest
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session, sessionmaker
 
 from app.database.base import Base
 from app.modules.organizations.models.organization import Organization  # noqa: F401  (registers table)
@@ -41,7 +41,6 @@ from app.shared.exceptions.organization import (
     OrganizationEmailTaken,
     OrganizationNotFound,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

@@ -6,7 +6,8 @@ to physical database entities (Device & Sensor models).
 """
 
 import uuid
-from sqlalchemy import select, and_
+
+from sqlalchemy import and_, select
 from sqlalchemy.orm import Session
 
 from app.modules.devices.models.device import Device

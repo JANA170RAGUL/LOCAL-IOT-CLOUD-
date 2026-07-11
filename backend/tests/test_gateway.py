@@ -11,19 +11,18 @@ We seed organizations, tenants, and projects as parents.
 
 import pytest
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session, sessionmaker
 
 from app.database.base import Base
-from app.modules.organizations.models.organization import Organization
-from app.modules.tenants.models.tenant import Tenant
-from app.modules.projects.models.project import Project
-from app.modules.gateways.models.gateway import Gateway
 from app.modules.gateways.schemas.gateway import (
     GatewayCreate,
     GatewayFilter,
     GatewayUpdate,
 )
 from app.modules.gateways.services.gateway_service import GatewayService
+from app.modules.organizations.models.organization import Organization
+from app.modules.projects.models.project import Project
+from app.modules.tenants.models.tenant import Tenant
 from app.shared.exceptions.gateway import (
     GatewayCodeTaken,
     GatewayNotFound,
@@ -214,8 +213,8 @@ class TestUpdateGateway:
         """Only the provided fields are updated."""
         gateway = svc.create_gateway(db, seeded_project.id, make_payload())
         updated = svc.update_gateway(
-            db, 
-            gateway.id, 
+            db,
+            gateway.id,
             GatewayUpdate(name="Updated Gateway Name", ip_address="192.168.1.150")
         )
 

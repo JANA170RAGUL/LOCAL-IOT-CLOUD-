@@ -23,14 +23,8 @@ from math import ceil
 
 from sqlalchemy.orm import Session
 
-from app.shared.services.base_service import BaseService
-from app.shared.exceptions.tenant import (
-    TenantCodeTaken,
-    TenantEmailTaken,
-    TenantNotFound,
-)
-
 from app.modules.tenants.models.tenant import Tenant
+from app.modules.tenants.repositories.tenant_repository import TenantRepository
 from app.modules.tenants.schemas.tenant import (
     TenantCreate,
     TenantFilter,
@@ -38,7 +32,12 @@ from app.modules.tenants.schemas.tenant import (
     TenantSummary,
     TenantUpdate,
 )
-from app.modules.tenants.repositories.tenant_repository import TenantRepository
+from app.shared.exceptions.tenant import (
+    TenantCodeTaken,
+    TenantEmailTaken,
+    TenantNotFound,
+)
+from app.shared.services.base_service import BaseService
 
 logger = logging.getLogger(__name__)
 

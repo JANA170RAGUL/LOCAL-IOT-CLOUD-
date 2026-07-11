@@ -18,13 +18,8 @@ from math import ceil
 
 from sqlalchemy.orm import Session
 
-from app.shared.services.base_service import BaseService
-from app.shared.exceptions.project import (
-    ProjectCodeTaken,
-    ProjectNotFound,
-)
-
 from app.modules.projects.models.project import Project
+from app.modules.projects.repositories.project_repository import ProjectRepository
 from app.modules.projects.schemas.project import (
     ProjectCreate,
     ProjectFilter,
@@ -32,7 +27,11 @@ from app.modules.projects.schemas.project import (
     ProjectSummary,
     ProjectUpdate,
 )
-from app.modules.projects.repositories.project_repository import ProjectRepository
+from app.shared.exceptions.project import (
+    ProjectCodeTaken,
+    ProjectNotFound,
+)
+from app.shared.services.base_service import BaseService
 
 logger = logging.getLogger(__name__)
 

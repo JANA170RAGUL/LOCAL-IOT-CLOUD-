@@ -19,14 +19,10 @@ from math import ceil
 
 from sqlalchemy.orm import Session
 
-from app.shared.services.base_service import BaseService
-from app.shared.exceptions.organization import (
-    OrganizationCodeTaken,
-    OrganizationEmailTaken,
-    OrganizationNotFound,
-)
-
 from app.modules.organizations.models.organization import Organization
+from app.modules.organizations.repositories.organization_repository import (
+    OrganizationRepository,
+)
 from app.modules.organizations.schemas.organization import (
     OrganizationCreate,
     OrganizationFilter,
@@ -34,9 +30,12 @@ from app.modules.organizations.schemas.organization import (
     OrganizationSummary,
     OrganizationUpdate,
 )
-from app.modules.organizations.repositories.organization_repository import (
-    OrganizationRepository,
+from app.shared.exceptions.organization import (
+    OrganizationCodeTaken,
+    OrganizationEmailTaken,
+    OrganizationNotFound,
 )
+from app.shared.services.base_service import BaseService
 
 logger = logging.getLogger(__name__)
 

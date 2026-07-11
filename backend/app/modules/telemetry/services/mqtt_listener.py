@@ -9,6 +9,7 @@ resolves gateway context from topic segments, and enqueues to Redis.
 import json
 import logging
 import threading
+
 import paho.mqtt.client as mqtt
 
 from app.config.settings import settings
@@ -31,7 +32,7 @@ class MQTTListener:
                 username=settings.mqtt_username,
                 password=settings.mqtt_password or None,
             )
-        
+
         # Configure callbacks
         self.client.on_connect = self._on_connect
         self.client.on_message = self._on_message
@@ -65,7 +66,7 @@ class MQTTListener:
             device_code_ctx = topic_parts[2]
 
             payload_data = json.loads(msg.payload.decode("utf-8"))
-            
+
             # Enforce device identifier in payload if missing, fallback to topic segment
             if "device" not in payload_data:
                 payload_data["device"] = device_code_ctx
@@ -90,11 +91,11 @@ class MQTTListener:
         """Start the listener in a background thread."""
         logger.info("Starting MQTT Listener thread...")
         self._stop_event.clear()
-        
+
         # Connect to broker
         self.client.connect(
             host=settings.mqtt_host,
-            port=settings.mqtt_effective_port(),
+            port=settings.mqtt_effective_port,
             keepalive=60,
         )
 

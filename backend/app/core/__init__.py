@@ -7,6 +7,7 @@ from app.core.constants import (
     DataType,
     DeviceStatus,
     Environment,
+    Headers,
     LicenseMode,
     NotificationChannel,
     RecordStatus,
@@ -14,7 +15,6 @@ from app.core.constants import (
     SortOrder,
     TokenType,
     UserRole,
-    Headers,
 )
 from app.core.exceptions import (
     BadRequestError,

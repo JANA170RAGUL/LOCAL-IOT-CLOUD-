@@ -1,4 +1,4 @@
-from typing import Generic, TypeVar, Type
+from typing import Generic, Type, TypeVar
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session

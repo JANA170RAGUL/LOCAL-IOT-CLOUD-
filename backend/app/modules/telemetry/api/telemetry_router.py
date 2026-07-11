@@ -9,8 +9,6 @@ Mounted at: /
 """
 
 import asyncio
-from datetime import datetime, timezone
-import json
 import logging
 from typing import Optional
 
@@ -19,19 +17,18 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.constants import AggregationFunction
-from app.database.session import get_db
-from app.database.redis import get_redis_client
 from app.database.influx import query_api, settings
-from app.shared.exceptions.device import DeviceNotFound
-
+from app.database.redis import get_redis_client
+from app.database.session import get_db
 from app.modules.devices.models.device import Device
-from app.modules.telemetry.services.queue_manager import QueueManager
-from app.modules.telemetry.services.payload_validator import PayloadValidator
 from app.modules.telemetry.schemas.telemetry import (
     TelemetryHistoryResponse,
     TelemetryLatestResponse,
     TelemetryPointResponse,
 )
+from app.modules.telemetry.services.payload_validator import PayloadValidator
+from app.modules.telemetry.services.queue_manager import QueueManager
+from app.shared.exceptions.device import DeviceNotFound
 
 logger = logging.getLogger(__name__)
 
@@ -63,14 +60,14 @@ def ingest_telemetry_http(
 
     # Enforce device UUID match
     payload["device"] = device_id
-    
+
     validated = PayloadValidator.validate(payload)
-    
+
     envelope = {
         "payload": validated,
         "gateway_ctx": device.gateway_id,
     }
-    
+
     QueueManager.enqueue(envelope)
     return {"status": "Accepted", "message": "Telemetry enqueued for processing."}
 
@@ -125,7 +122,7 @@ def get_latest_telemetry(
                     "sensor_type": sensor_type,
                     "timestamp": ts,
                 }
-            
+
             # Save raw and calibrated values
             if field == "value":
                 latest_readings[sensor_code]["value"] = val
@@ -185,7 +182,7 @@ def get_telemetry_history(
     flux_parts = [
         f'from(bucket: "{settings.influx_bucket}")',
         f'  |> range(start: {start_clause}, stop: {stop_clause})',
-        f'  |> filter(fn: (r) => r["_measurement"] == "telemetry")',
+        '  |> filter(fn: (r) => r["_measurement"] == "telemetry")',
         f'  |> filter(fn: (r) => r["device_id"] == "{device_id}")'
     ]
 

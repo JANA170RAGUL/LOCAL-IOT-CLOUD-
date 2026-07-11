@@ -5,6 +5,7 @@ InfluxDB time-series storage writer.
 """
 
 import logging
+
 from influxdb_client import Point
 
 from app.config.settings import settings
@@ -55,7 +56,7 @@ class InfluxWriter:
         """Write a batch of processed telemetry points to InfluxDB in one roundtrip."""
         if not processed_records:
             return
-        
+
         points = []
         for rec in processed_records:
             try:

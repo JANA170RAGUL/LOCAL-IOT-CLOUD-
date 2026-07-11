@@ -8,12 +8,11 @@ Processes and normalizes raw telemetry payloads:
 - Updates timestamps in MySQL (last_seen, last_reading_at)
 """
 
-from datetime import datetime, timezone
 import logging
+from datetime import datetime, timezone
+
 from sqlalchemy.orm import Session
 
-from app.modules.devices.models.device import Device
-from app.modules.sensors.models.sensor import Sensor
 from app.modules.telemetry.services.sensor_resolver import SensorResolver
 
 logger = logging.getLogger(__name__)

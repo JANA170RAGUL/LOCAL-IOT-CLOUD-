@@ -1,0 +1,16 @@
+# ruff.toml
+# Ruff configuration for LocalIoTCloud platform
+
+line-length = 120
+target-version = "py310"
+
+[lint]
+select = ["E", "F", "W", "I"]
+ignore = [
+    "E402",  # Module level import not at top of file
+    "F821",  # Undefined name (SQLAlchemy forward references)
+    "E501",  # Line too long
+    "W291",  # Trailing whitespace
+    "W292",  # No newline at end of file
+    "W293",  # Blank line contains whitespace
+]

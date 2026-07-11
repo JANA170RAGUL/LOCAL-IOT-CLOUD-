@@ -5,6 +5,7 @@ Validate the format of incoming raw telemetry messages.
 """
 
 from typing import Any, Optional, Union
+
 from pydantic import BaseModel, Field, ValidationError
 
 

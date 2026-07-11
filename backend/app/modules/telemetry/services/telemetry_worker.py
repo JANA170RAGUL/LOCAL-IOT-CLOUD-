@@ -9,15 +9,16 @@ to live Redis pub/sub channels for real-time WebSocket distribution.
 
 import json
 import logging
-import time
 import threading
+import time
+
 from sqlalchemy.orm import sessionmaker
 
 from app.database.connection import engine
 from app.database.redis import get_redis_client
-from app.modules.telemetry.services.queue_manager import QueueManager
-from app.modules.telemetry.services.processing_engine import ProcessingEngine
 from app.modules.telemetry.services.influx_writer import InfluxWriter
+from app.modules.telemetry.services.processing_engine import ProcessingEngine
+from app.modules.telemetry.services.queue_manager import QueueManager
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ class TelemetryWorker:
     def __init__(self, poll_interval_sec: float = 0.5, batch_size: int = 100):
         self.poll_interval_sec = poll_interval_sec
         self.batch_size = batch_size
-        
+
         # Configure MySQL session factory
         self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -60,7 +61,7 @@ class TelemetryWorker:
                 self._process_cycle()
             except Exception as e:
                 logger.error(f"Error in Telemetry Worker execution cycle: {e}", exc_info=True)
-            
+
             # Simple adaptive sleep: if queue was empty, sleep full interval
             time.sleep(self.poll_interval_sec)
 
@@ -86,7 +87,7 @@ class TelemetryWorker:
                         raw_payload=payload,
                         gateway_ctx=gateway_ctx,
                     )
-                    
+
                     processed_records.append(normalized)
 
                     # Publish normalized data to Redis PubSub for WebSockets

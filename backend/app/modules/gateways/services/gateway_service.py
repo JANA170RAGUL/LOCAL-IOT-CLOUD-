@@ -18,13 +18,8 @@ from math import ceil
 
 from sqlalchemy.orm import Session
 
-from app.shared.services.base_service import BaseService
-from app.shared.exceptions.gateway import (
-    GatewayCodeTaken,
-    GatewayNotFound,
-)
-
 from app.modules.gateways.models.gateway import Gateway
+from app.modules.gateways.repositories.gateway_repository import GatewayRepository
 from app.modules.gateways.schemas.gateway import (
     GatewayCreate,
     GatewayFilter,
@@ -32,7 +27,11 @@ from app.modules.gateways.schemas.gateway import (
     GatewaySummary,
     GatewayUpdate,
 )
-from app.modules.gateways.repositories.gateway_repository import GatewayRepository
+from app.shared.exceptions.gateway import (
+    GatewayCodeTaken,
+    GatewayNotFound,
+)
+from app.shared.services.base_service import BaseService
 
 logger = logging.getLogger(__name__)
 

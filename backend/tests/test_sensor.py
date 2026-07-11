@@ -11,27 +11,26 @@ We seed organizations, tenants, projects, gateways, and devices as parents.
 
 import pytest
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session, sessionmaker
 
-from app.database.base import Base
-from app.modules.organizations.models.organization import Organization
-from app.modules.tenants.models.tenant import Tenant
-from app.modules.projects.models.project import Project
-from app.modules.gateways.models.gateway import Gateway
-from app.modules.devices.models.device import Device
-from app.modules.sensors.models.sensor import Sensor
-from app.shared.iot import SensorType, MeasurementUnit
 from app.core.constants import DataType
+from app.database.base import Base
+from app.modules.devices.models.device import Device
+from app.modules.gateways.models.gateway import Gateway
+from app.modules.organizations.models.organization import Organization
+from app.modules.projects.models.project import Project
 from app.modules.sensors.schemas.sensor import (
     SensorCreate,
     SensorFilter,
     SensorUpdate,
 )
 from app.modules.sensors.services.sensor_service import SensorService
+from app.modules.tenants.models.tenant import Tenant
 from app.shared.exceptions.sensor import (
     SensorCodeTaken,
     SensorNotFound,
 )
+from app.shared.iot import MeasurementUnit, SensorType
 
 
 @pytest.fixture(scope="session")
@@ -241,8 +240,8 @@ class TestUpdateSensor:
         """Only the provided fields are updated."""
         sensor = svc.create_sensor(db, seeded_device.id, make_payload())
         updated = svc.update_sensor(
-            db, 
-            sensor.id, 
+            db,
+            sensor.id,
             SensorUpdate(name="Calibrated Temp", calibration_offset=0.1)
         )
 

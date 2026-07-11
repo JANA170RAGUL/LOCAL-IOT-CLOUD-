@@ -11,20 +11,19 @@ We seed organizations, tenants, projects, and gateways as parents.
 
 import pytest
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session, sessionmaker
 
 from app.database.base import Base
-from app.modules.organizations.models.organization import Organization
-from app.modules.tenants.models.tenant import Tenant
-from app.modules.projects.models.project import Project
-from app.modules.gateways.models.gateway import Gateway
-from app.modules.devices.models.device import Device
 from app.modules.devices.schemas.device import (
     DeviceCreate,
     DeviceFilter,
     DeviceUpdate,
 )
 from app.modules.devices.services.device_service import DeviceService
+from app.modules.gateways.models.gateway import Gateway
+from app.modules.organizations.models.organization import Organization
+from app.modules.projects.models.project import Project
+from app.modules.tenants.models.tenant import Tenant
 from app.shared.exceptions.device import (
     DeviceCodeTaken,
     DeviceNotFound,
@@ -226,8 +225,8 @@ class TestUpdateDevice:
         """Only the provided fields are updated."""
         device = svc.create_device(db, seeded_gateway.id, make_payload())
         updated = svc.update_device(
-            db, 
-            device.id, 
+            db,
+            device.id,
             DeviceUpdate(name="New Node Name", model="ESP32-S3")
         )
 

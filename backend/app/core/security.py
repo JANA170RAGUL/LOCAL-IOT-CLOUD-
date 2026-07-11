@@ -30,7 +30,7 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 from app.config.settings import settings
-from app.core.constants import TokenType, API_KEY_LENGTH
+from app.core.constants import API_KEY_LENGTH, TokenType
 from app.core.exceptions import InvalidTokenError
 
 # ---------------------------------------------------------------------------

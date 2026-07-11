@@ -18,13 +18,8 @@ from math import ceil
 
 from sqlalchemy.orm import Session
 
-from app.shared.services.base_service import BaseService
-from app.shared.exceptions.sensor import (
-    SensorCodeTaken,
-    SensorNotFound,
-)
-
 from app.modules.sensors.models.sensor import Sensor
+from app.modules.sensors.repositories.sensor_repository import SensorRepository
 from app.modules.sensors.schemas.sensor import (
     SensorCreate,
     SensorFilter,
@@ -32,7 +27,11 @@ from app.modules.sensors.schemas.sensor import (
     SensorSummary,
     SensorUpdate,
 )
-from app.modules.sensors.repositories.sensor_repository import SensorRepository
+from app.shared.exceptions.sensor import (
+    SensorCodeTaken,
+    SensorNotFound,
+)
+from app.shared.services.base_service import BaseService
 
 logger = logging.getLogger(__name__)
 

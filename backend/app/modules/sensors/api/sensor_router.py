@@ -22,7 +22,6 @@ from sqlalchemy.orm import Session
 
 from app.core.constants import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 from app.database.session import get_db
-from app.shared.iot import SensorType
 from app.modules.sensors.dependencies import get_sensor_service
 from app.modules.sensors.schemas.sensor import (
     SensorCreate,
@@ -32,6 +31,7 @@ from app.modules.sensors.schemas.sensor import (
     SensorUpdate,
 )
 from app.modules.sensors.services.sensor_service import SensorService
+from app.shared.iot import SensorType
 
 router = APIRouter(
     tags=["Sensors"],

@@ -6,6 +6,7 @@ Buffers raw incoming payloads from MQTT or HTTP to decouple ingestion from stora
 """
 
 import json
+
 from app.database.redis import get_redis_client
 
 QUEUE_KEY = "telemetry:queue"
@@ -26,7 +27,7 @@ class QueueManager:
         Uses a Redis pipeline to perform batch pops atomically and efficiently.
         """
         r = get_redis_client()
-        
+
         # Determine the length of the queue to pop only what is present
         queue_len = r.llen(QUEUE_KEY)
         if not queue_len:
@@ -36,9 +37,9 @@ class QueueManager:
         pipe = r.pipeline()
         for _ in range(pop_count):
             pipe.lpop(QUEUE_KEY)
-        
+
         results = pipe.execute()
-        
+
         payloads = []
         for res in results:
             if res:

@@ -20,8 +20,7 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.constants import DataType
-from app.shared.iot import SensorType, MeasurementUnit
-
+from app.shared.iot import MeasurementUnit, SensorType
 
 # ---------------------------------------------------------------------------
 # Valid status values (mirrors the model column)
@@ -41,12 +40,12 @@ class SensorBase(BaseModel):
     sensor_type: SensorType = Field(SensorType.CUSTOM, description="Primary type of the sensor")
     unit: Optional[MeasurementUnit] = Field(None, description="Standard or custom measurement unit symbol")
     data_type: DataType = Field(DataType.NUMBER, description="Telemetry data type (e.g. number)")
-    
+
     # Boundaries
     min_value: Optional[float] = Field(None, description="Optional minimum boundary")
     max_value: Optional[float] = Field(None, description="Optional maximum boundary")
     default_value: Optional[str] = Field(None, max_length=255, description="Default reading value as string")
-    
+
     # Sampling & Calibration
     sampling_interval: Optional[int] = Field(5, ge=1, description="Interval in seconds between readings")
     calibration_offset: float = Field(0.0, description="Calibration offset additive factor")
@@ -80,15 +79,15 @@ class SensorUpdate(BaseModel):
     sensor_type: Optional[SensorType] = None
     unit: Optional[MeasurementUnit] = None
     data_type: Optional[DataType] = None
-    
+
     min_value: Optional[float] = None
     max_value: Optional[float] = None
     default_value: Optional[str] = Field(None, max_length=255)
-    
+
     sampling_interval: Optional[int] = Field(None, ge=1)
     calibration_offset: Optional[float] = None
     calibration_scale: Optional[float] = None
-    
+
     status: Optional[str] = Field(None, pattern=STATUS_PATTERN)
 
 

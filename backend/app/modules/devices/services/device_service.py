@@ -18,13 +18,8 @@ from math import ceil
 
 from sqlalchemy.orm import Session
 
-from app.shared.services.base_service import BaseService
-from app.shared.exceptions.device import (
-    DeviceCodeTaken,
-    DeviceNotFound,
-)
-
 from app.modules.devices.models.device import Device
+from app.modules.devices.repositories.device_repository import DeviceRepository
 from app.modules.devices.schemas.device import (
     DeviceCreate,
     DeviceFilter,
@@ -32,7 +27,11 @@ from app.modules.devices.schemas.device import (
     DeviceSummary,
     DeviceUpdate,
 )
-from app.modules.devices.repositories.device_repository import DeviceRepository
+from app.shared.exceptions.device import (
+    DeviceCodeTaken,
+    DeviceNotFound,
+)
+from app.shared.services.base_service import BaseService
 
 logger = logging.getLogger(__name__)
 

@@ -33,7 +33,6 @@ from typing import Any
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
-
 # ---------------------------------------------------------------------------
 # Base exception
 # ---------------------------------------------------------------------------

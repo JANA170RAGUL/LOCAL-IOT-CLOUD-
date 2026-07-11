@@ -11,18 +11,17 @@ We seed organizations and tenants as parents since projects require a valid tena
 
 import pytest
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session, sessionmaker
 
 from app.database.base import Base
 from app.modules.organizations.models.organization import Organization
-from app.modules.tenants.models.tenant import Tenant
-from app.modules.projects.models.project import Project
 from app.modules.projects.schemas.project import (
     ProjectCreate,
     ProjectFilter,
     ProjectUpdate,
 )
 from app.modules.projects.services.project_service import ProjectService
+from app.modules.tenants.models.tenant import Tenant
 from app.shared.exceptions.project import (
     ProjectCodeTaken,
     ProjectNotFound,

@@ -11,11 +11,10 @@ We seed organizations as parents since tenants require a valid organization_id (
 
 import pytest
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session, sessionmaker
 
 from app.database.base import Base
 from app.modules.organizations.models.organization import Organization
-from app.modules.tenants.models.tenant import Tenant
 from app.modules.tenants.schemas.tenant import (
     TenantCreate,
     TenantFilter,

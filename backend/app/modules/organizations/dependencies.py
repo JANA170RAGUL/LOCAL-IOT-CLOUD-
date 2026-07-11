@@ -22,11 +22,6 @@ Example
 
 from __future__ import annotations
 
-from fastapi import Depends
-from sqlalchemy.orm import Session
-
-from app.database.session import get_db
-from app.modules.organizations.schemas.organization import OrganizationResponse
 from app.modules.organizations.services.organization_service import OrganizationService
 
 # ---------------------------------------------------------------------------

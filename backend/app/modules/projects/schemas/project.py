@@ -19,7 +19,6 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-
 # ---------------------------------------------------------------------------
 # Valid status values (mirrors the model column)
 # ---------------------------------------------------------------------------

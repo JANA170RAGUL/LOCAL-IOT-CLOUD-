@@ -1,12 +1,12 @@
 from fastapi import FastAPI
 
-from app.modules.organizations.api.organization_router import router as organization_router
-from app.modules.tenants.api.tenant_router import router as tenant_router
-from app.modules.projects.api.project_router import router as project_router
-from app.modules.gateways.api.gateway_router import router as gateway_router
 from app.modules.devices.api.device_router import router as device_router
+from app.modules.gateways.api.gateway_router import router as gateway_router
+from app.modules.organizations.api.organization_router import router as organization_router
+from app.modules.projects.api.project_router import router as project_router
 from app.modules.sensors.api.sensor_router import router as sensor_router
 from app.modules.telemetry.api.telemetry_router import router as telemetry_router
+from app.modules.tenants.api.tenant_router import router as tenant_router
 from app.shared.exceptions.handlers import register_exception_handlers
 
 app = FastAPI(
@@ -28,6 +28,7 @@ app.include_router(telemetry_router)
 
 
 import sys
+
 from app.modules.telemetry.services.mqtt_listener import MQTTListener
 from app.modules.telemetry.services.telemetry_worker import TelemetryWorker
 

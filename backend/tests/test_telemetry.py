@@ -6,26 +6,25 @@ Uses in-memory SQLite for SQL lookups and mocks Redis/InfluxDB dependencies.
 """
 
 from datetime import datetime, timezone
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session, sessionmaker
 
 from app.database.base import Base
-from app.modules.organizations.models.organization import Organization
-from app.modules.tenants.models.tenant import Tenant
-from app.modules.projects.models.project import Project
-from app.modules.gateways.models.gateway import Gateway
 from app.modules.devices.models.device import Device
+from app.modules.gateways.models.gateway import Gateway
+from app.modules.organizations.models.organization import Organization
+from app.modules.projects.models.project import Project
 from app.modules.sensors.models.sensor import Sensor
-from app.shared.iot import SensorType, MeasurementUnit
-
+from app.modules.telemetry.services.influx_writer import InfluxWriter
 from app.modules.telemetry.services.payload_validator import PayloadValidator
-from app.modules.telemetry.services.sensor_resolver import SensorResolver
 from app.modules.telemetry.services.processing_engine import ProcessingEngine
 from app.modules.telemetry.services.queue_manager import QueueManager
-from app.modules.telemetry.services.influx_writer import InfluxWriter
-
+from app.modules.telemetry.services.sensor_resolver import SensorResolver
+from app.modules.tenants.models.tenant import Tenant
+from app.shared.iot import MeasurementUnit, SensorType
 
 # ---------------------------------------------------------------------------
 # Database Fixtures
@@ -242,7 +241,7 @@ class TestQueueManager:
         mock_queue = []
         mock_redis.rpush.side_effect = lambda key, val: mock_queue.append(val)
         mock_redis.llen.side_effect = lambda key: len(mock_queue)
-        
+
         # Dequeue uses a pipeline logic
         mock_pipeline = MagicMock()
         mock_redis.pipeline.return_value = mock_pipeline
@@ -256,9 +255,9 @@ class TestQueueManager:
 
         payload = {"device": "D01", "sensor": "T", "value": 20.0}
         QueueManager.enqueue(payload)
-        
+
         assert len(mock_queue) == 1
-        
+
         dequeued = QueueManager.dequeue_batch(batch_size=10)
         assert len(dequeued) == 1
         assert dequeued[0]["device"] == "D01"

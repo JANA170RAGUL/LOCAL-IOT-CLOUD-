@@ -6,10 +6,9 @@ Handles data history queries and JSON validation.
 """
 
 from datetime import datetime
-from typing import Any, Optional, Union
-from pydantic import BaseModel, Field
+from typing import Union
 
-from app.core.constants import AggregationFunction
+from pydantic import BaseModel
 
 
 class TelemetryPointResponse(BaseModel):
