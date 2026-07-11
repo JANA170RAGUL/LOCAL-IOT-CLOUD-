@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 
 from app.modules.organizations.api.organization_router import router as organization_router
+from app.modules.tenants.api.tenant_router import router as tenant_router
 from app.shared.exceptions.handlers import register_exception_handlers
 
 app = FastAPI(
@@ -13,6 +14,7 @@ register_exception_handlers(app)
 
 # Register Routers
 app.include_router(organization_router)
+app.include_router(tenant_router)
 
 
 @app.get("/")

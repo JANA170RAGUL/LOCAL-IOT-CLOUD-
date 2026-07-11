@@ -1,9 +1,16 @@
+from __future__ import annotations
+
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import BaseModel
+
+if TYPE_CHECKING:
+    # Avoids circular imports at runtime; only used by type checkers.
+    from app.modules.tenants.models.tenant import Tenant
 
 
 class Organization(BaseModel):
@@ -88,7 +95,6 @@ class Organization(BaseModel):
     )
 
     # ── Status & Licensing ───────────────────────────────────────────────────
-    # Replaces the old Mapped[bool] status field.
     # Valid values: ACTIVE | INACTIVE | SUSPENDED | TRIAL | EXPIRED
     # is_active (from BaseModel) remains the soft-delete / enabled flag.
     status: Mapped[str] = mapped_column(
@@ -107,4 +113,12 @@ class Organization(BaseModel):
     # None means the license does not expire (e.g. Community tier)
     subscription_end: Mapped[datetime | None] = mapped_column(
         nullable=True,
+    )
+
+    # ── Relationships ─────────────────────────────────────────────────────────
+    tenants: Mapped[list[Tenant]] = relationship(
+        "Tenant",
+        back_populates="organization",
+        cascade="all, delete-orphan",
+        lazy="select",
     )

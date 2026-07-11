@@ -11,6 +11,7 @@ actual implementation.
 | Module | Status | Document |
 |---|---|---|
 | Organization | ✅ v1.0 | [organization.md](./organization.md) |
+| Tenant | ✅ v1.0 | [tenant.md](./tenant.md) |
 
 ---
 
@@ -18,7 +19,6 @@ actual implementation.
 
 | Module | Status |
 |---|---|
-| Tenant | 🔄 Next |
 | Authentication | 📋 Planned |
 | User | 📋 Planned |
 | Device | 📋 Planned |

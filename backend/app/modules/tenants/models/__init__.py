@@ -1,5 +1,5 @@
-"""app/modules/tenants/models package.
+"""app/modules/tenants/models package."""
 
-Import ORM models here once defined, e.g.:
-    from app.modules.tenants.models.tenant import Tenant
-"""
+from app.modules.tenants.models.tenant import Tenant
+
+__all__ = ["Tenant"]
