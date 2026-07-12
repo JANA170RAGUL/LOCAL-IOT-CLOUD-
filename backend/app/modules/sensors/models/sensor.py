@@ -14,6 +14,12 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import BaseModel
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.modules.devices.models.device import Device
+    from app.modules.rules.models.rule import Rule
+
 
 class Sensor(BaseModel):
     __tablename__ = "sensors"
@@ -123,4 +129,11 @@ class Sensor(BaseModel):
     device: Mapped["Device"] = relationship(  # type: ignore[name-defined]
         "Device",
         back_populates="sensors",
+    )
+
+    rules: Mapped[list[Rule]] = relationship(
+        "Rule",
+        back_populates="sensor",
+        cascade="all, delete-orphan",
+        lazy="select",
     )

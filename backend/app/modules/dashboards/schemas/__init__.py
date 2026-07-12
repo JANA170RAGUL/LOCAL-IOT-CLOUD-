@@ -1,5 +1,17 @@
-"""app/modules/dashboards/schemas package.
+"""app/modules/dashboards/schemas package."""
 
-Import Pydantic schemas here once defined, e.g.:
-    from app.modules.dashboards.schemas.dashboard import DashboardCreate, DashboardResponse
-"""
+from app.modules.dashboards.schemas.dashboard import (
+    DashboardCreate,
+    DashboardUpdate,
+    DashboardResponse,
+    DashboardFilter,
+    DashboardListResponse,
+)
+
+__all__ = [
+    "DashboardCreate",
+    "DashboardUpdate",
+    "DashboardResponse",
+    "DashboardFilter",
+    "DashboardListResponse",
+]

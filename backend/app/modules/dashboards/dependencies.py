@@ -1,19 +1,17 @@
 """
 app/modules/dashboards/dependencies.py
 
-FastAPI ``Depends()`` helpers scoped to the Dashboard module.
+FastAPI dependency injectors for the Dashboard module.
 """
 
-from __future__ import annotations
+from app.modules.dashboards.repositories.dashboard_repository import DashboardRepository
+from app.modules.dashboards.services.dashboard_service import DashboardService
 
-# from app.modules.dashboards.services.dashboard_service import DashboardService  # noqa: E501
-# Uncomment the import above once the service class is implemented.
+# Singletons for repository and service
+dashboard_repo = DashboardRepository()
+dashboard_svc = DashboardService(dashboard_repo)
 
 
-def get_dashboard_service():  # type: ignore[return]
-    """
-    Provide a ``DashboardService`` instance.
-    Uncomment the body once the service class is implemented.
-    """
-    # return DashboardService()
-    raise NotImplementedError("DashboardService is not yet implemented.")
+def get_dashboard_service() -> DashboardService:
+    """Return the global DashboardService instance."""
+    return dashboard_svc

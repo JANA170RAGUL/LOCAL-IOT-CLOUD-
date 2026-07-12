@@ -1,5 +1,3 @@
-"""app/modules/rules/services package.
+from app.modules.rules.services.rule_service import RuleService
 
-Import service classes here once defined, e.g.:
-    from app.modules.rules.services.rule_service import RuleService
-"""
+__all__ = ["RuleService"]

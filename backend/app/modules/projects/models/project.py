@@ -16,6 +16,8 @@ from app.database.base import BaseModel
 
 if TYPE_CHECKING:
     from app.modules.gateways.models.gateway import Gateway
+    from app.modules.dashboards.models.dashboard import Dashboard
+    from app.modules.rules.models.rule import Rule
 
 
 class Project(BaseModel):
@@ -73,6 +75,20 @@ class Project(BaseModel):
 
     gateways: Mapped[list[Gateway]] = relationship(
         "Gateway",
+        back_populates="project",
+        cascade="all, delete-orphan",
+        lazy="select",
+    )
+
+    dashboards: Mapped[list[Dashboard]] = relationship(
+        "Dashboard",
+        back_populates="project",
+        cascade="all, delete-orphan",
+        lazy="select",
+    )
+
+    rules: Mapped[list[Rule]] = relationship(
+        "Rule",
         back_populates="project",
         cascade="all, delete-orphan",
         lazy="select",

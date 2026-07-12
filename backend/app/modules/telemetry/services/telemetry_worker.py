@@ -103,6 +103,13 @@ class TelemetryWorker:
                     }
                     r.publish(f"telemetry:stream:{device_id}", json.dumps(pubsub_msg))
 
+                    # Run Rule Engine evaluation
+                    try:
+                        from app.modules.rules.engine.runner import RuleEngineRunner
+                        RuleEngineRunner.evaluate_and_trigger(db, normalized)
+                    except Exception as re_err:
+                        logger.error(f"Rule Engine failed to evaluate record: {re_err}")
+
                 except Exception as e:
                     logger.error(f"Error processing item in worker: {e}")
                     # Continue processing other items in the batch

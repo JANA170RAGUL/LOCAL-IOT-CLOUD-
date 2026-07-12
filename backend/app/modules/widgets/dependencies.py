@@ -1,19 +1,17 @@
 """
 app/modules/widgets/dependencies.py
 
-FastAPI ``Depends()`` helpers scoped to the Widget module.
+FastAPI dependency injectors for the Widget module.
 """
 
-from __future__ import annotations
+from app.modules.widgets.repositories.widget_repository import WidgetRepository
+from app.modules.widgets.services.widget_service import WidgetService
 
-# from app.modules.widgets.services.widget_service import WidgetService  # noqa: E501
-# Uncomment the import above once the service class is implemented.
+# Singletons for repository and service
+widget_repo = WidgetRepository()
+widget_svc = WidgetService(widget_repo)
 
 
-def get_widget_service():  # type: ignore[return]
-    """
-    Provide a ``WidgetService`` instance.
-    Uncomment the body once the service class is implemented.
-    """
-    # return WidgetService()
-    raise NotImplementedError("WidgetService is not yet implemented.")
+def get_widget_service() -> WidgetService:
+    """Return the global WidgetService instance."""
+    return widget_svc

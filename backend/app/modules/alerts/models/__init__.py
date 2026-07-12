@@ -1,5 +1,3 @@
-"""app/modules/alerts/models package.
+from app.modules.alerts.models.alert import Alert
 
-Import ORM models here once defined, e.g.:
-    from app.modules.alerts.models.alert import Alert
-"""
+__all__ = ["Alert"]

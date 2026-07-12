@@ -1,5 +1,3 @@
-"""app/modules/rules/models package.
+from app.modules.rules.models.rule import Rule
 
-Import ORM models here once defined, e.g.:
-    from app.modules.rules.models.rule import Rule
-"""
+__all__ = ["Rule"]

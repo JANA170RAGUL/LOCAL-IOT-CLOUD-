@@ -88,6 +88,7 @@ class ProcessingEngine:
         return {
             "device_id": device.id,
             "gateway_id": device.gateway_id,
+            "sensor_id": sensor.id,
             "sensor_code": sensor.code,
             "sensor_type": sensor.sensor_type,
             "data_type": sensor.data_type,

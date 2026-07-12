@@ -17,6 +17,10 @@ actual implementation.
 | Device | ✅ v1.0 | [device.md](./device.md) |
 | Sensor | ✅ v1.0 | [sensor.md](./sensor.md) |
 | Telemetry | ✅ v1.0 | [telemetry.md](./telemetry.md) |
+| Dashboard | ✅ v1.0 | [dashboard.md](./dashboard.md) |
+| Widget | ✅ v1.0 | [widget.md](./widget.md) |
+| Rule | ✅ v1.0 | [rule.md](./rule.md) |
+| Alert | ✅ v1.0 | [alert.md](./alert.md) |
 
 ---
 
@@ -26,10 +30,6 @@ actual implementation.
 |---|---|
 | Authentication | 📋 Planned |
 | User | 📋 Planned |
-| Alert | 📋 Planned |
-| Rule | 📋 Planned |
-| Dashboard | 📋 Planned |
-| Widget | 📋 Planned |
 | Channel | 📋 Planned |
 | Analytics | 📋 Planned |
 | Report | 📋 Planned |

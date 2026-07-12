@@ -1,5 +1,15 @@
-"""app/modules/rules/schemas package.
+from app.modules.rules.schemas.rule import (
+    RuleCreate,
+    RuleUpdate,
+    RuleResponse,
+    RuleFilter,
+    RuleListResponse,
+)
 
-Import Pydantic schemas here once defined, e.g.:
-    from app.modules.rules.schemas.rule import RuleCreate, RuleResponse
-"""
+__all__ = [
+    "RuleCreate",
+    "RuleUpdate",
+    "RuleResponse",
+    "RuleFilter",
+    "RuleListResponse",
+]

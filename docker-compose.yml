@@ -1,0 +1,78 @@
+version: "3.9"
+
+services:
+
+  mysql:
+    image: mysql:8.4
+    container_name: licp-mysql
+
+    restart: unless-stopped
+
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: licp_platform
+
+    ports:
+      - "3306:3306"
+
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  influxdb:
+    image: influxdb:2.7
+
+    container_name: licp-influxdb
+
+    restart: unless-stopped
+
+    ports:
+      - "8086:8086"
+
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+
+  redis:
+    image: redis:7
+
+    container_name: licp-redis
+
+    restart: unless-stopped
+
+    ports:
+      - "6379:6379"
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+
+    container_name: licp-mqtt
+
+    restart: unless-stopped
+
+    ports:
+      - "1883:1883"
+
+  adminer:
+    image: adminer
+
+    container_name: licp-adminer
+
+    restart: unless-stopped
+
+    ports:
+      - "8080:8080"
+
+  grafana:
+    image: grafana/grafana
+
+    container_name: licp-grafana
+
+    restart: unless-stopped
+
+    ports:
+      - "3000:3000"
+
+volumes:
+
+  mysql_data:
+
+  influxdb_data:

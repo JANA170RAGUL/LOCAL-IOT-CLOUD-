@@ -7,6 +7,10 @@ from app.modules.projects.api.project_router import router as project_router
 from app.modules.sensors.api.sensor_router import router as sensor_router
 from app.modules.telemetry.api.telemetry_router import router as telemetry_router
 from app.modules.tenants.api.tenant_router import router as tenant_router
+from app.modules.dashboards.api.dashboard_router import router as dashboard_router
+from app.modules.widgets.api.widget_router import router as widget_router
+from app.modules.rules.api.router import router as rules_router
+from app.modules.alerts.api.router import router as alerts_router
 from app.shared.exceptions.handlers import register_exception_handlers
 
 app = FastAPI(
@@ -25,6 +29,10 @@ app.include_router(gateway_router)
 app.include_router(device_router)
 app.include_router(sensor_router)
 app.include_router(telemetry_router)
+app.include_router(dashboard_router)
+app.include_router(widget_router)
+app.include_router(rules_router)
+app.include_router(alerts_router)
 
 
 import sys

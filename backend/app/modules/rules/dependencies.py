@@ -6,14 +6,12 @@ FastAPI ``Depends()`` helpers scoped to the Rule module.
 
 from __future__ import annotations
 
-# from app.modules.rules.services.rule_service import RuleService  # noqa: E501
-# Uncomment the import above once the service class is implemented.
+from app.modules.rules.services.rule_service import RuleService
+from app.modules.rules.repositories.rule_repository import RuleRepository
 
 
-def get_rule_service():  # type: ignore[return]
+def get_rule_service() -> RuleService:
     """
     Provide a ``RuleService`` instance.
-    Uncomment the body once the service class is implemented.
     """
-    # return RuleService()
-    raise NotImplementedError("RuleService is not yet implemented.")
+    return RuleService(RuleRepository())

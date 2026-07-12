@@ -1,5 +1,3 @@
-"""app/modules/rules/repositories package.
+from app.modules.rules.repositories.rule_repository import RuleRepository
 
-Import repository classes here once defined, e.g.:
-    from app.modules.rules.repositories.rule_repository import RuleRepository
-"""
+__all__ = ["RuleRepository"]
