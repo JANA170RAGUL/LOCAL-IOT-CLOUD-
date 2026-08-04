@@ -1,19 +1,19 @@
-"""
-app/modules/reports/dependencies.py
+from fastapi import Depends
+from sqlalchemy.orm import Session
+from influxdb_client import InfluxDBClient
+from app.database.session import get_db
+from app.database.influx import get_influx_client
 
-FastAPI ``Depends()`` helpers scoped to the Report module.
-"""
+from app.modules.reports.repositories.report_repository import ReportRepository
+from app.modules.reports.services.report_service import ReportService
 
-from __future__ import annotations
+def get_report_repository(
+    db: Session = Depends(get_db),
+    influx_client: InfluxDBClient = Depends(get_influx_client)
+) -> ReportRepository:
+    return ReportRepository(db=db, influx_client=influx_client)
 
-# from app.modules.reports.services.report_service import ReportService  # noqa: E501
-# Uncomment the import above once the service class is implemented.
-
-
-def get_report_service():  # type: ignore[return]
-    """
-    Provide a ``ReportService`` instance.
-    Uncomment the body once the service class is implemented.
-    """
-    # return ReportService()
-    raise NotImplementedError("ReportService is not yet implemented.")
+def get_report_service(
+    repository: ReportRepository = Depends(get_report_repository)
+) -> ReportService:
+    return ReportService(repository=repository)

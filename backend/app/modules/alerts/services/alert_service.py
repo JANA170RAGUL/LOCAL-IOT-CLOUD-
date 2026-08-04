@@ -5,8 +5,11 @@ Alert business service layer.
 """
 
 from datetime import datetime, timezone
+import json
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+
+from app.database.redis import get_redis_client
 
 from app.shared.services.base_service import BaseService
 from app.modules.projects.models.project import Project
@@ -18,6 +21,7 @@ from app.modules.alerts.schemas.alert import (
     AlertCreate,
     AlertUpdate,
     AlertFilter,
+    AlertResponse,
 )
 
 
@@ -26,6 +30,26 @@ class AlertService(BaseService[Alert, AlertRepository]):
     def __init__(self, repository: AlertRepository):
         super().__init__(repository)
         self.repository = repository
+
+    def _get_project_id_for_alert(self, alert: Alert) -> str | None:
+        """Helper to resolve the project_id this alert belongs to."""
+        if alert.rule_id and alert.rule:
+            return alert.rule.project_id
+        if alert.sensor_id and alert.sensor and alert.sensor.device and alert.sensor.device.gateway:
+            return alert.sensor.device.gateway.project_id
+        if alert.device_id and alert.device and alert.device.gateway:
+            return alert.device.gateway.project_id
+        return None
+
+    def _publish_alert(self, alert: Alert) -> None:
+        """Publish the alert state to the Redis stream for the project."""
+        project_id = self._get_project_id_for_alert(alert)
+        if not project_id:
+            return
+            
+        r = get_redis_client()
+        payload = AlertResponse.model_validate(alert).model_dump_json()
+        r.publish(f"alerts:stream:{project_id}", payload)
 
     def create_alert(
         self,
@@ -49,7 +73,9 @@ class AlertService(BaseService[Alert, AlertRepository]):
             metadata_json=schema.metadata_json,
             is_active=True,
         )
-        return self.repository.create(db, alert)
+        created = self.repository.create(db, alert)
+        self._publish_alert(created)
+        return created
 
     def get_alert(self, db: Session, alert_id: str) -> Alert:
         """Fetch alert details. Raises AlertNotFound if missing or inactive."""
@@ -91,7 +117,9 @@ class AlertService(BaseService[Alert, AlertRepository]):
             else:
                 setattr(alert, key, val)
 
-        return self.repository.update(db, alert)
+        updated = self.repository.update(db, alert)
+        self._publish_alert(updated)
+        return updated
 
     def acknowledge_alert(
         self,
@@ -110,7 +138,9 @@ class AlertService(BaseService[Alert, AlertRepository]):
         if alert.status == "OPEN":
             alert.status = "ACKNOWLEDGED"
 
-        return self.repository.update(db, alert)
+        updated = self.repository.update(db, alert)
+        self._publish_alert(updated)
+        return updated
 
     def resolve_alert(
         self,
@@ -124,11 +154,14 @@ class AlertService(BaseService[Alert, AlertRepository]):
         alert.resolved_at = datetime.now(timezone.utc)
         alert.status = "RESOLVED"
 
-        return self.repository.update(db, alert)
+        updated = self.repository.update(db, alert)
+        self._publish_alert(updated)
+        return updated
 
     def deactivate_alert(self, db: Session, alert_id: str) -> None:
         """Soft-deletes the alert by setting is_active=False and status=CLOSED."""
         alert = self.get_alert(db, alert_id)
         alert.status = "CLOSED"
         alert.is_active = False
-        self.repository.update(db, alert)
+        updated = self.repository.update(db, alert)
+        self._publish_alert(updated)

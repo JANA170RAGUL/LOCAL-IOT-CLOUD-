@@ -48,7 +48,7 @@ class WidgetService(BaseService[Widget, WidgetRepository]):
             name=schema.name,
             title=schema.title,
             description=schema.description,
-            widget_type=schema.widget_type.value,
+            widget_type=schema.widget_type,
             data_source=schema.data_source,
             query_config=schema.query_config,
             display_config=schema.display_config,
@@ -91,7 +91,7 @@ class WidgetService(BaseService[Widget, WidgetRepository]):
         update_data = schema.model_dump(exclude_unset=True)
         for key, val in update_data.items():
             if key == "widget_type" and val is not None:
-                setattr(widget, key, val.value)
+                setattr(widget, key, val)
             else:
                 setattr(widget, key, val)
 

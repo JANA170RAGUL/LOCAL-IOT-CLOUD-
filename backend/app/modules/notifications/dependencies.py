@@ -1,19 +1,11 @@
-"""
-app/modules/notifications/dependencies.py
+from fastapi import Depends
+from sqlalchemy.orm import Session
+from app.database.session import get_db
+from app.modules.notifications.repositories.notification_repository import NotificationRepository
+from app.modules.notifications.services.notification_service import NotificationService
 
-FastAPI ``Depends()`` helpers scoped to the Notification module.
-"""
+def get_notification_repository(db: Session = Depends(get_db)) -> NotificationRepository:
+    return NotificationRepository(db)
 
-from __future__ import annotations
-
-# from app.modules.notifications.services.notification_service import NotificationService  # noqa: E501
-# Uncomment the import above once the service class is implemented.
-
-
-def get_notification_service():  # type: ignore[return]
-    """
-    Provide a ``NotificationService`` instance.
-    Uncomment the body once the service class is implemented.
-    """
-    # return NotificationService()
-    raise NotImplementedError("NotificationService is not yet implemented.")
+def get_notification_service(db: Session = Depends(get_db)) -> NotificationService:
+    return NotificationService(db)

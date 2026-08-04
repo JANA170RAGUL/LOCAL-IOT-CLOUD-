@@ -1,19 +1,15 @@
-"""
-app/modules/settings/dependencies.py
+from fastapi import Depends
+from sqlalchemy.orm import Session
+from app.database.session import get_db
+from app.modules.settings.services.settings_service import SettingsService
+from app.modules.settings.services.health_service import HealthService
+from app.modules.settings.repositories.audit_log_repository import AuditLogRepository
 
-FastAPI ``Depends()`` helpers scoped to the Setting module.
-"""
+def get_settings_service(db: Session = Depends(get_db)) -> SettingsService:
+    return SettingsService(db)
 
-from __future__ import annotations
+def get_health_service() -> HealthService:
+    return HealthService()
 
-# from app.modules.settings.services.settings_service import SettingService  # noqa: E501
-# Uncomment the import above once the service class is implemented.
-
-
-def get_settings_service():  # type: ignore[return]
-    """
-    Provide a ``SettingService`` instance.
-    Uncomment the body once the service class is implemented.
-    """
-    # return SettingService()
-    raise NotImplementedError("SettingService is not yet implemented.")
+def get_audit_log_repository(db: Session = Depends(get_db)) -> AuditLogRepository:
+    return AuditLogRepository(db)

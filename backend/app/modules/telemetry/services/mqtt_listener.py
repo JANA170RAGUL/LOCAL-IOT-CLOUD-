@@ -71,6 +71,14 @@ class MQTTListener:
             if "device" not in payload_data:
                 payload_data["device"] = device_code_ctx
 
+            # Enforce licensing limits (silently drop MQTT messages to avoid crashing loop)
+            from app.database.redis import get_redis_client
+            from app.modules.licensing.services.telemetry_limiter import check_telemetry_limits
+            redis_client = get_redis_client()
+            if not check_telemetry_limits(redis_client):
+                logger.warning(f"Dropped MQTT telemetry from {device_code_ctx}: License limit exceeded")
+                return
+
             # Validate structural shape
             validated = PayloadValidator.validate(payload_data)
 

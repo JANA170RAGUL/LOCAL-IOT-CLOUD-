@@ -9,6 +9,8 @@ from sqlalchemy.orm import Session
 
 from app.database.session import get_db
 from app.modules.widgets.dependencies import get_widget_service
+from app.modules.widgets.models.widget import Widget
+from app.modules.licensing.dependencies import check_feature_limit
 from app.modules.widgets.schemas.widget import (
     WidgetCreate,
     WidgetUpdate,
@@ -35,6 +37,10 @@ def create_widget(
     db: Session = Depends(get_db),
     svc: WidgetService = Depends(get_widget_service),
 ) -> WidgetResponse:
+    # License limit check
+    current_count = db.query(Widget).count()
+    check_feature_limit("widgets", current_count)
+
     return svc.create_widget(db, dashboard_id, payload)
 
 

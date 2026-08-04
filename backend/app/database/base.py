@@ -35,3 +35,4 @@ class BaseModel(Base):
         Boolean,
         default=True
     )
+

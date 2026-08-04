@@ -18,7 +18,7 @@ class WidgetBase(BaseModel):
     name: str = Field(..., min_length=2, max_length=100)
     title: Optional[str] = Field(None, max_length=100)
     description: Optional[str] = None
-    widget_type: WidgetType
+    widget_type: str = Field(..., max_length=50)
     data_source: str = Field("telemetry", max_length=50)
     query_config: dict = Field(..., description="Query configuration parameters (sensors, aggregates, intervals)")
     display_config: Optional[dict] = Field(None, description="Visual settings parameters (colors, legends, min, max)")
@@ -37,7 +37,7 @@ class WidgetUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=2, max_length=100)
     title: Optional[str] = Field(None, max_length=100)
     description: Optional[str] = None
-    widget_type: Optional[WidgetType] = None
+    widget_type: Optional[str] = Field(None, max_length=50)
     data_source: Optional[str] = Field(None, max_length=50)
     query_config: Optional[dict] = None
     display_config: Optional[dict] = None

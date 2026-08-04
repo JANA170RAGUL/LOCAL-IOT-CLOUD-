@@ -31,6 +31,11 @@ class ActionDispatcher:
         """
         Execute actions associated with the rule.
         """
+        from datetime import datetime
+        from app.database.redis import get_redis_client
+        from app.modules.alerts.models.alert import Alert
+        from app.modules.alerts.schemas.alert import AlertResponse
+
         logger.warning(
             f"Rule Triggered! Rule: '{rule.name}' (Code: {rule.code}), Severity: {rule.severity}, "
             f"Sensor ID: {rule.sensor_id}, Current Value: {value}"
@@ -38,12 +43,12 @@ class ActionDispatcher:
 
         action_type = rule.action_type.upper()
         config = rule.action_config
+        ts_str = timestamp.isoformat() if isinstance(timestamp, datetime) else str(timestamp)
 
         # 1. Create Alert record in MySQL database
         alert_id = None
         if db is not None:
             try:
-                from app.modules.alerts.models.alert import Alert
                 alert = Alert(
                     rule_id=rule.id,
                     sensor_id=rule.sensor_id,
@@ -54,7 +59,7 @@ class ActionDispatcher:
                     status="OPEN",
                     acknowledged=False,
                     resolved=False,
-                    metadata_json={"telemetry_value": value, "timestamp": timestamp},
+                    metadata_json={"telemetry_value": value, "timestamp": ts_str},
                     is_active=True,
                 )
                 db.add(alert)
@@ -62,6 +67,15 @@ class ActionDispatcher:
                 db.refresh(alert)
                 alert_id = alert.id
                 logger.info(f"Alert successfully created in database. ID: {alert_id}")
+                
+                # Publish to alerts:stream:{project_id}
+                try:
+                    r_pub = get_redis_client()
+                    alert_payload = AlertResponse.model_validate(alert).model_dump_json()
+                    r_pub.publish(f"alerts:stream:{rule.project_id}", alert_payload)
+                    logger.info(f"Published alert to alerts:stream:{rule.project_id}")
+                except Exception as pub_err:
+                    logger.error(f"Failed to publish to alerts stream: {pub_err}")
             except Exception as db_err:
                 logger.error(f"Failed to create Alert record in database: {db_err}")
 
@@ -76,7 +90,7 @@ class ActionDispatcher:
                 "severity": rule.severity,
                 "sensor_id": rule.sensor_id,
                 "value": value,
-                "timestamp": timestamp,
+                "timestamp": ts_str,
                 "action_type": action_type,
                 "action_config": config,
             }
@@ -92,8 +106,30 @@ class ActionDispatcher:
             cls._trigger_webhook(config, event)
 
         elif action_type == "EMAIL":
-            # Stub email sending
-            logger.info(f"Sending email notification to: {config.get('recipients', [])}")
+            # Delegate to Notification Engine
+            logger.info(f"Queueing email notification to: {config.get('recipients', [])}")
+            try:
+                from app.modules.notifications.services.notification_service import NotificationService
+                if db is not None:
+                    ns = NotificationService(db)
+                    ns.ensure_default_templates()
+                    context = {
+                        "alert_title": f"Rule Triggered: {rule.name}",
+                        "rule_name": rule.name,
+                        "severity": rule.severity,
+                        "value": value,
+                        "timestamp": ts_str
+                    }
+                    for recipient in config.get("recipients", []):
+                        ns.enqueue_notification(
+                            template_name="ALERT_TRIGGERED",
+                            recipient=recipient,
+                            context=context,
+                            user_id=None,  # We don't have user_id in the rule config yet
+                            channel="EMAIL"
+                        )
+            except Exception as email_err:
+                logger.error(f"Failed to queue email notification: {email_err}")
 
         elif action_type == "SMS":
             # Stub SMS sending

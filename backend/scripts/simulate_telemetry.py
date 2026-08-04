@@ -30,6 +30,9 @@ from app.modules.organizations.models.organization import Organization
 from app.modules.projects.models.project import Project
 from app.modules.sensors.models.sensor import Sensor
 from app.modules.tenants.models.tenant import Tenant
+from app.modules.dashboards.models.dashboard import Dashboard
+from app.modules.widgets.models.widget import Widget
+from app.modules.rules.models.rule import Rule
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

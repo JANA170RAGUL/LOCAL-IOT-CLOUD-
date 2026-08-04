@@ -34,14 +34,18 @@ from app.core.exceptions import (
 )
 from app.core.logging import get_logger, setup_logging
 from app.core.security import (
+    generate_activation_token,
+    generate_api_key,
+)
+from app.core.jwt import (
     create_access_token,
     create_refresh_token,
     decode_access_token,
     decode_refresh_token,
     extract_bearer_token,
-    generate_activation_token,
-    generate_api_key,
     get_token_subject,
+)
+from app.core.password import (
     hash_password,
     verify_password,
 )

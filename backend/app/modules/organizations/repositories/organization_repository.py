@@ -41,8 +41,10 @@ class OrganizationRepository(BaseRepository[Organization]):
         db: Session,
         keyword: str | None = None,
         status: str | None = None,
+        license_type: str | None = None,
         page: int = 1,
         page_size: int = 20,
+        allowed_org_ids: list[str] | None = None,
     ) -> tuple[list[Organization], int]:
         """
         Return a page of organizations filtered by optional keyword and status.
@@ -62,6 +64,12 @@ class OrganizationRepository(BaseRepository[Organization]):
 
         if status:
             stmt = stmt.where(Organization.status == status)
+
+        if license_type:
+            stmt = stmt.where(Organization.license_type == license_type)
+
+        if allowed_org_ids is not None:
+            stmt = stmt.where(Organization.id.in_(allowed_org_ids))
 
         # Count before pagination
         count_stmt = select(func.count()).select_from(stmt.subquery())

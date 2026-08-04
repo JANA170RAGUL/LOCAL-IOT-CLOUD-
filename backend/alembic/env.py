@@ -32,7 +32,22 @@ from app.modules.dashboards.models.dashboard import Dashboard  # noqa: F401
 from app.modules.widgets.models.widget import Widget  # noqa: F401
 from app.modules.rules.models.rule import Rule  # noqa: F401
 from app.modules.alerts.models.alert import Alert  # noqa: F401
-
+from app.modules.users.models.user import User  # noqa: F401
+from app.modules.settings.models.setting import Setting  # noqa: F401
+from app.modules.administration.models.audit_log import AuditLog  # noqa: F401
+from app.modules.administration.models.activity_log import ActivityLog  # noqa: F401
+from app.modules.notifications.models.notification import NotificationTemplate, Notification, UserNotificationPreference  # noqa: F401
+from app.modules.commands.models.command import DeviceCommand  # noqa: F401
+from app.modules.auth.models.password_history import PasswordHistory  # noqa: F401
+from app.modules.auth.models.user_session import UserSession  # noqa: F401
+from app.modules.auth.models.login_history import LoginHistory  # noqa: F401
+from app.modules.auth.models.verification_token import VerificationToken  # noqa: F401
+from app.modules.auth.models.api_key import ApiKey  # noqa: F401
+from app.modules.licensing.models.license import License  # noqa: F401
+from app.modules.licensing.models.license_feature import LicenseFeature  # noqa: F401
+from app.modules.licensing.models.machine_fingerprint import MachineFingerprint  # noqa: F401
+from app.modules.licensing.models.license_activation import LicenseActivation  # noqa: F401
+from app.modules.channels.models.channel import Channel, ChannelField, ChannelApiKey, ChannelWebhook, WebhookDeliveryLog  # noqa: F401
 target_metadata = Base.metadata
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

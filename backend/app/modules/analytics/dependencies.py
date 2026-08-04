@@ -1,19 +1,19 @@
-"""
-app/modules/analytics/dependencies.py
+from fastapi import Depends
+from sqlalchemy.orm import Session
+from app.database.session import get_db
+from app.database.influx import get_influx_client
+from influxdb_client import InfluxDBClient
 
-FastAPI ``Depends()`` helpers scoped to the Analytics module.
-"""
+from app.modules.analytics.repositories.analytics_repository import AnalyticsRepository
+from app.modules.analytics.services.analytics_service import AnalyticsService
 
-from __future__ import annotations
+def get_analytics_repository(
+    db: Session = Depends(get_db),
+    influx_client: InfluxDBClient = Depends(get_influx_client)
+) -> AnalyticsRepository:
+    return AnalyticsRepository(db=db, influx_client=influx_client)
 
-# from app.modules.analytics.services.analytics_service import AnalyticsService  # noqa: E501
-# Uncomment the import above once the service class is implemented.
-
-
-def get_analytics_service():  # type: ignore[return]
-    """
-    Provide a ``AnalyticsService`` instance.
-    Uncomment the body once the service class is implemented.
-    """
-    # return AnalyticsService()
-    raise NotImplementedError("AnalyticsService is not yet implemented.")
+def get_analytics_service(
+    repository: AnalyticsRepository = Depends(get_analytics_repository)
+) -> AnalyticsService:
+    return AnalyticsService(repository=repository)

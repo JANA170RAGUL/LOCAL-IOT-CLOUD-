@@ -23,6 +23,8 @@ from sqlalchemy.orm import Session
 from app.core.constants import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 from app.database.session import get_db
 from app.modules.gateways.dependencies import get_gateway_service
+from app.modules.gateways.models.gateway import Gateway
+from app.modules.licensing.dependencies import check_feature_limit
 from app.modules.gateways.schemas.gateway import (
     GatewayCreate,
     GatewayFilter,
@@ -54,6 +56,10 @@ def create_gateway(
     db: Session = Depends(get_db),
     svc: GatewayService = Depends(get_gateway_service),
 ) -> GatewayResponse:
+    # License limit check
+    current_count = db.query(Gateway).filter(Gateway.is_active == True).count()
+    check_feature_limit("gateways", current_count)
+    
     return svc.create_gateway(db, project_id, payload)
 
 

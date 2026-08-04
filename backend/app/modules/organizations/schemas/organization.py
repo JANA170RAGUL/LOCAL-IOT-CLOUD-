@@ -64,6 +64,11 @@ class OrganizationCreate(OrganizationBase):
     )
     subscription_end: Optional[datetime] = None
 
+class OrganizationOnboardRequest(BaseModel):
+    org: OrganizationCreate
+    admin_first_name: str = Field(..., max_length=100)
+    admin_last_name: str = Field(..., max_length=100)
+    admin_email: EmailStr
 
 # ---------------------------------------------------------------------------
 # Update Organization  —  every field optional (PATCH semantics)
@@ -141,8 +146,13 @@ class OrganizationFilter(BaseModel):
         pattern="^(ACTIVE|INACTIVE|SUSPENDED|TRIAL|EXPIRED)$",
         description="Filter by lifecycle status",
     )
+    license_type: Optional[str] = Field(
+        None,
+        pattern="^(Community|Professional|Enterprise|Academic)$",
+        description="Filter by license tier",
+    )
     page: int = Field(1, ge=1)
-    page_size: int = Field(20, ge=1, le=100)
+    page_size: int = Field(20, ge=1, le=200)
 
 
 # ---------------------------------------------------------------------------

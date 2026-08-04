@@ -24,7 +24,7 @@ class AlertBase(BaseModel):
     acknowledged_at: Optional[datetime] = None
     resolved: bool = False
     resolved_at: Optional[datetime] = None
-    metadata_json: Optional[dict[str, Any]] = Field(None, alias="metadata")
+    metadata_json: Optional[dict[str, Any]] = Field(None, serialization_alias="metadata")
 
 
 class AlertCreate(AlertBase):
@@ -40,7 +40,7 @@ class AlertUpdate(BaseModel):
     acknowledged_at: Optional[datetime] = None
     resolved: Optional[bool] = None
     resolved_at: Optional[datetime] = None
-    metadata_json: Optional[dict[str, Any]] = Field(None, alias="metadata")
+    metadata_json: Optional[dict[str, Any]] = Field(None, serialization_alias="metadata")
     status_is_active: Optional[bool] = Field(None, alias="is_active")
 
 

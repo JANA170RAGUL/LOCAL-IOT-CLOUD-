@@ -61,6 +61,14 @@ def ingest_telemetry_http(
     # Enforce device UUID match
     payload["device"] = device_id
 
+    # Enforce licensing limits
+    from app.database.redis import get_redis_client
+    from app.modules.licensing.services.telemetry_limiter import check_telemetry_limits
+    redis_client = get_redis_client()
+    if not check_telemetry_limits(redis_client):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=429, detail="Telemetry rate limit or storage limit exceeded per your license plan.")
+
     validated = PayloadValidator.validate(payload)
 
     envelope = {
@@ -261,39 +269,40 @@ def get_telemetry_history(
 async def websocket_telemetry_stream(
     websocket: WebSocket,
     device_id: str,
-    db: Session = Depends(get_db),
 ):
     """
-    Subscribes to Redis PubSub for real-time telemetry from the worker
-    and forwards it to the WebSocket client connection.
+    Subscribes to Redis PubSub for real-time device telemetry.
     """
     await websocket.accept()
     logger.info(f"WebSocket client connected to telemetry stream: {device_id}")
 
     # Verify device
-    device = db.scalar(select(Device).where(Device.id == device_id))
-    if not device or not device.is_active:
-        await websocket.send_json({"error": "Device not found or inactive."})
-        await websocket.close()
-        return
+    from app.database.session import SessionLocal
+    db = SessionLocal()
+    try:
+        device = db.scalar(select(Device).where(Device.id == device_id))
+        if not device or not device.is_active:
+            await websocket.send_json({"error": "Device not found or inactive."})
+            await websocket.close()
+            return
+    finally:
+        db.close()
 
     r = get_redis_client()
     pubsub = r.pubsub()
     pubsub.subscribe(f"telemetry:stream:{device_id}")
 
     try:
-        # Run a poll listener loop
         while True:
-            # Check connection state (allows detecting disconnects)
-            # We wait 10ms for messages from Redis PubSub
-            msg = pubsub.get_message(ignore_subscribe_messages=True, timeout=0.01)
+            # timeout=0 means non-blocking
+            msg = pubsub.get_message(ignore_subscribe_messages=True, timeout=0)
             if msg:
                 data = msg["data"]
-                # Send text data straight through
+                if isinstance(data, bytes):
+                    data = data.decode("utf-8")
                 await websocket.send_text(data)
 
-            # Prevent CPU thrashing by allowing async context switch
-            await asyncio.sleep(0.01)
+            await asyncio.sleep(0.1)  # sleep 100ms
     except WebSocketDisconnect:
         logger.info(f"WebSocket client disconnected from telemetry stream: {device_id}")
     finally:

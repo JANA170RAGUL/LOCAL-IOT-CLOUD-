@@ -17,7 +17,7 @@ jobs:
       mysql:
         image: mysql:8.4
         env:
-          MYSQL_ROOT_PASSWORD: root123
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD || 'root123' }}
           MYSQL_DATABASE: licp_platform
         ports:
           - 3306:3306
@@ -58,10 +58,44 @@ jobs:
         run: |
           ruff check backend/
 
-      - name: Run Pytest Suite
+      - name: Dependency Security Scanning (pip-audit)
         run: |
-          pytest backend/tests/ -v
+          pip install pip-audit
+          pip-audit -r backend/requirements.txt || true
+
+      - name: Run Pytest Suite with Coverage
+        run: |
+          pytest backend/tests/ -v --cov=app
 
       - name: Verify Docker Build
         run: |
           docker build -t localiotcloud-backend:latest backend/
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Dependency Security Scanning (npm audit)
+        working-directory: ./frontend
+        run: npm audit || true
+
+      - name: Run Frontend Lint
+        working-directory: ./frontend
+        run: npm run lint
+
+      - name: Build Frontend
+        working-directory: ./frontend
+        run: npm run build

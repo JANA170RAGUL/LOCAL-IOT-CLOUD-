@@ -23,6 +23,8 @@ from sqlalchemy.orm import Session
 from app.core.constants import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 from app.database.session import get_db
 from app.modules.devices.dependencies import get_device_service
+from app.modules.devices.models.device import Device
+from app.modules.licensing.dependencies import check_feature_limit
 from app.modules.devices.schemas.device import (
     DeviceCreate,
     DeviceFilter,
@@ -54,6 +56,10 @@ def create_device(
     db: Session = Depends(get_db),
     svc: DeviceService = Depends(get_device_service),
 ) -> DeviceResponse:
+    # License limit check
+    current_count = db.query(Device).filter(Device.is_active == True).count()
+    check_feature_limit("devices", current_count)
+    
     return svc.create_device(db, gateway_id, payload)
 
 

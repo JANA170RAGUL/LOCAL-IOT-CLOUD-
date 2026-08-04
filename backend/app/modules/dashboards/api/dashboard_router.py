@@ -10,6 +10,8 @@ from sqlalchemy.orm import Session
 from app.core.constants import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 from app.database.session import get_db
 from app.modules.dashboards.dependencies import get_dashboard_service
+from app.modules.dashboards.models.dashboard import Dashboard
+from app.modules.licensing.dependencies import check_feature_limit
 from app.modules.dashboards.schemas.dashboard import (
     DashboardCreate,
     DashboardUpdate,
@@ -37,6 +39,10 @@ def create_dashboard(
     db: Session = Depends(get_db),
     svc: DashboardService = Depends(get_dashboard_service),
 ) -> DashboardResponse:
+    # License limit check
+    current_count = db.query(Dashboard).filter(Dashboard.is_active == True).count()
+    check_feature_limit("dashboards", current_count)
+
     return svc.create_dashboard(db, project_id, payload)
 
 

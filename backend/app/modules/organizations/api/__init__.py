@@ -18,8 +18,10 @@ Routes are kept thin: parse → delegate → return.
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
+from app.core.auth import get_current_user
 from app.database.session import get_db
 from app.modules.organizations.dependencies import get_org_service
+from app.modules.users.models.user import User
 from app.modules.organizations.schemas.organization import (
     OrganizationCreate,
     OrganizationFilter,
@@ -75,6 +77,7 @@ def list_organizations(
     page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
     svc: OrganizationService = Depends(get_org_service),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Return a paginated list of organizations.
@@ -89,7 +92,7 @@ def list_organizations(
         page=page,
         page_size=page_size,
     )
-    return svc.list(db, filters)
+    return svc.list(db, filters, current_user)
 
 
 # ---------------------------------------------------------------------------

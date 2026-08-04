@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     # -----------------------------------------------------------------------
     app_name: str = Field("LocalIoTCloud", alias="APP_NAME")
     app_env: str = Field("development", alias="APP_ENV")
-    debug: bool = Field(True, alias="DEBUG")
+    debug: bool = Field(False, alias="DEBUG")
     secret_key: str = Field(..., alias="SECRET_KEY")
     api_v1_prefix: str = Field("/api/v1", alias="API_V1_PREFIX")
 

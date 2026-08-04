@@ -30,6 +30,7 @@ from app.modules.organizations.schemas.organization import (
     OrganizationSummary,
     OrganizationUpdate,
 )
+from app.modules.users.models.user import User
 from app.shared.exceptions.organization import (
     OrganizationCodeTaken,
     OrganizationEmailTaken,
@@ -128,6 +129,7 @@ class OrganizationService(
         self,
         db: Session,
         filters: OrganizationFilter,
+        current_user: User,
     ) -> OrganizationListResponse:
         """
         Return a paginated list of organizations.
@@ -137,12 +139,23 @@ class OrganizationService(
           - status filter   (ACTIVE | INACTIVE | SUSPENDED | TRIAL | EXPIRED)
           - pagination      (page, page_size)
         """
+        allowed_org_ids = None
+        if current_user.role not in ["Super Admin", "Admin"]:
+            # Customer roles can only see their own organization
+            if current_user.organization_id:
+                allowed_org_ids = [current_user.organization_id]
+            else:
+                # If they don't have an organization assigned, they see nothing
+                allowed_org_ids = []
+
         items, total = self.repository.search(
             db,
             keyword=filters.search,
             status=filters.status,
+            license_type=filters.license_type,
             page=filters.page,
             page_size=filters.page_size,
+            allowed_org_ids=allowed_org_ids,
         )
 
         return OrganizationListResponse(
