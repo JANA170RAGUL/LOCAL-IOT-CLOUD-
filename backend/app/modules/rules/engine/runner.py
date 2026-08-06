@@ -5,6 +5,7 @@ Orchestrates the loading, evaluation, cooldown checking, and dispatching of rule
 """
 
 import logging
+from typing import Any
 from sqlalchemy.orm import Session
 from app.modules.rules.engine.rule_loader import RuleLoader
 from app.modules.rules.engine.evaluator import RuleEvaluator

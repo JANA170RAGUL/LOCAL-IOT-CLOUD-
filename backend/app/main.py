@@ -6,6 +6,9 @@ import logging
 from app.config.settings import settings
 from app.database.session import SessionLocal
 
+from app.modules.devices.models.device import Device
+from app.modules.gateways.models.gateway import Gateway
+from app.modules.sensors.models.sensor import Sensor
 from app.modules.devices.api.device_router import router as device_router
 from app.modules.gateways.api.gateway_router import router as gateway_router
 from app.modules.organizations.api.organization_router import router as organization_router
@@ -73,7 +76,7 @@ app.include_router(project_router, dependencies=protected_dependencies)
 app.include_router(gateway_router, dependencies=protected_dependencies)
 app.include_router(device_router, dependencies=protected_dependencies)
 app.include_router(sensor_router, dependencies=protected_dependencies)
-app.include_router(telemetry_router, dependencies=protected_dependencies)
+app.include_router(telemetry_router)
 app.include_router(dashboard_router, dependencies=protected_dependencies)
 app.include_router(widget_router, dependencies=protected_dependencies)
 app.include_router(rules_router, dependencies=protected_dependencies)

@@ -26,6 +26,8 @@ import { UserDetails } from '../pages/users/UserDetails';
 import { Profile } from '../pages/profile/Profile';
 import { Analytics } from '../pages/analytics/Analytics';
 import { Reports } from '../pages/reports/Reports';
+import { AIEnginePage } from '../pages/AIEnginePage';
+import { AIEngineDetailsPage } from '../pages/AIEngineDetailsPage';
 import { ChannelList } from '../features/channels/components/ChannelList';
 import { ChannelForm } from '../features/channels/components/ChannelForm';
 import { ChannelDetails } from '../features/channels/components/ChannelDetails';
@@ -179,6 +181,14 @@ export const router = createBrowserRouter([
       {
         path: '/reports',
         element: <Reports />,
+      },
+      {
+        path: '/ai-engine',
+        element: <AIEnginePage />,
+      },
+      {
+        path: '/ai-engine/:engineId',
+        element: <AIEngineDetailsPage />,
       },
       {
         path: '/help',

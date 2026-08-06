@@ -197,13 +197,13 @@ void loop() {
   return (
     <Box>
       <Typography variant="h6" gutterBottom>MATLAB & ThingSpeak Compatibility</Typography>
-      <Typography variant="body2" color="text.secondary" paragraph>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
         The platform provides ThingSpeak-compatible REST API endpoints. This allows you to easily migrate existing scripts and devices that use the ThingSpeak API surface with minimal or no code changes.
       </Typography>
 
       <Card variant="outlined" sx={{ mb: 3 }}>
         <CardContent>
-          <Typography variant="subtitle1" fontWeight="bold" gutterBottom>Endpoint Reference</Typography>
+          <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>Endpoint Reference</Typography>
           <Typography variant="body2"><strong>Base URL:</strong> <code>{thingspeakUrl}</code></Typography>
           <Typography variant="body2" sx={{ mt: 1 }}><strong>Write Data:</strong> <code>POST /update</code></Typography>
           <Typography variant="body2"><strong>Read Channel:</strong> <code>GET /channels/{'{channel_id}'}/feeds.json</code></Typography>

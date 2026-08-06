@@ -106,10 +106,32 @@ class SensorResolver:
         )
         sensor = db.scalar(sensor_stmt)
 
+        # Fallback A: Case-insensitive match on code or sensor_type (e.g. "HUMIDITY", "humidity", "HUM")
         if not sensor:
-            raise ValueError(
-                f"Sensor with code '{sensor_code}' not registered under Device '{device.name}'."
+            sensor_stmt = select(Sensor).where(
+                and_(
+                    Sensor.device_id == device.id,
+                    (Sensor.code.ilike(sensor_code) | Sensor.sensor_type.ilike(sensor_code)),
+                )
             )
+            sensor = db.scalar(sensor_stmt)
+
+        # Fallback B: Auto-register new active sensor if missing so multi-sensor data is never dropped
+        if not sensor:
+            clean_code = sensor_code.upper().strip()
+            unit_val = "%" if "HUM" in clean_code else "°C" if "TEMP" in clean_code else "hPa" if "PRESS" in clean_code else ""
+            sensor = Sensor(
+                device_id=device.id,
+                code=clean_code,
+                name=f"{clean_code} Sensor",
+                sensor_type=clean_code,
+                data_type="number",
+                unit=unit_val,
+                is_active=True,
+            )
+            db.add(sensor)
+            db.commit()
+            db.refresh(sensor)
 
         if not sensor.is_active:
             raise ValueError(f"Sensor '{sensor.name}' is inactive.")

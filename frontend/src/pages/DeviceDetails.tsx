@@ -1,21 +1,21 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  CircularProgress,
-  Divider,
-  Grid,
-  Typography,
-  Alert,
-  Tabs,
-  Tab
-} from '@mui/material';
-import { ArrowBack as BackIcon, WifiTethering as LiveIcon } from '@mui/icons-material';
-import { useTheme } from '@mui/material/styles';
-import { StatusChip } from '../components/StatusChip';
+  ArrowLeft,
+  Cpu,
+  Tag,
+  Wifi,
+  Network,
+  Radio,
+  Clock,
+  Wrench,
+  Building,
+  Hash,
+  Activity,
+  FileText,
+  Terminal,
+  Layers
+} from 'lucide-react';
 import { useDeviceDetailsQuery } from '../features/devices/hooks/useDevices';
 import { useLatestTelemetryQuery, useTelemetryStream } from '../features/telemetry/hooks/useTelemetry';
 import { DeviceCommandsTab } from './DeviceCommandsTab';
@@ -23,42 +23,10 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime);
 
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-function CustomTabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`device-tabpanel-${index}`}
-      aria-labelledby={`device-tab-${index}`}
-      {...other}
-    >
-      {value === index && (
-        <Box sx={{ pt: 3 }}>
-          {children}
-        </Box>
-      )}
-    </div>
-  );
-}
-
 export const DeviceDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const theme = useTheme();
-
-  const [tabIndex, setTabIndex] = useState(0);
-
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setTabIndex(newValue);
-  };
+  const [activeTab, setActiveTab] = useState<'overview' | 'telemetry' | 'commands'>('overview');
 
   const { data: device, isLoading, isError, error } = useDeviceDetailsQuery(id ?? '');
 
@@ -66,248 +34,272 @@ export const DeviceDetails: React.FC = () => {
   const { data: telemetry } = useLatestTelemetryQuery(id ?? '');
   useTelemetryStream(id ?? '');
 
+  const initials = device?.name ? device.name.substring(0, 2).toUpperCase() : 'DEV';
+
   return (
-    <Box>
-      <Box sx={{ mb: 4 }}>
-        <Button
-          variant="outlined"
-          startIcon={<BackIcon />}
+    <div className="space-y-6 max-w-6xl mx-auto pb-12 font-sans text-slate-800 animate-in fade-in duration-300">
+      
+      {/* Breadcrumb & Back Button */}
+      <div>
+        <button
           onClick={() => navigate('/devices')}
-          sx={{ textTransform: 'none', mb: 2 }}
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-xs font-semibold shadow-2xs transition-all cursor-pointer mb-4"
         >
-          Back to Devices
-        </Button>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Device Profile
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Detailed view of the device configuration and hardware info.
-        </Typography>
-      </Box>
+          <ArrowLeft className="w-4 h-4 text-slate-500" />
+          <span>Back to Devices</span>
+        </button>
 
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+            Device Profile
+          </h1>
+          <p className="text-sm text-slate-500 mt-0.5">
+            Hardware configuration, live telemetry metrics, and command controls.
+          </p>
+        </div>
+      </div>
+
+      {/* Loading State */}
       {isLoading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-          <CircularProgress />
-        </Box>
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-12 text-center text-slate-400 animate-pulse font-medium shadow-xs">
+          Loading device profile...
+        </div>
       )}
 
+      {/* Error State */}
       {isError && (
-        <Alert severity="error">
-          {(error as any)?.message ?? 'Failed to load device.'}
-        </Alert>
+        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-medium">
+          <p className="font-bold">Error Loading Device</p>
+          <p className="text-xs">{error?.message || 'Failed to load device details.'}</p>
+        </div>
       )}
 
+      {/* Content */}
       {device && (
-        <Card sx={{ boxShadow: 'none', border: `1px solid ${theme.palette.divider}` }}>
-          <CardContent sx={{ p: 4 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-              <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                {device.name}
-              </Typography>
-              <StatusChip status={device.status} size="medium" />
-            </Box>
+        <div className="space-y-6">
+          
+          {/* Header Banner Card */}
+          <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-extrabold text-lg flex items-center justify-center shadow-sm shrink-0">
+                {initials}
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">
+                  {device.name}
+                </h2>
+                <p className="text-xs text-slate-500 font-mono mt-0.5 flex items-center gap-1.5">
+                  <Tag className="w-3.5 h-3.5 text-slate-400" /> Code: <span className="font-bold text-slate-700">{device.code}</span>
+                </p>
+              </div>
+            </div>
 
-            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-              <Tabs value={tabIndex} onChange={handleTabChange} aria-label="device tabs">
-                <Tab label="Overview" />
-                <Tab label="Telemetry" />
-                <Tab label="Commands" />
-              </Tabs>
-            </Box>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                <Radio className="w-3.5 h-3.5 text-blue-500" />
+                {device.device_type ? device.device_type.replace('_', ' ') : 'Device'}
+              </span>
 
-            <CustomTabPanel value={tabIndex} index={0}>
-              <Grid container spacing={3}>
-                <Grid size={12}>
-                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-                    General Information
-                  </Typography>
-                </Grid>
+              <span className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold border ${
+                device.status === 'ACTIVE'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : device.status === 'TRIAL' || device.status === 'INACTIVE'
+                  ? 'bg-amber-50 text-amber-700 border-amber-200'
+                  : 'bg-rose-50 text-rose-700 border-rose-200'
+              }`}>
+                <span className={`w-2 h-2 rounded-full ${
+                  device.status === 'ACTIVE' ? 'bg-emerald-500' :
+                  device.status === 'TRIAL' || device.status === 'INACTIVE' ? 'bg-amber-500' : 'bg-rose-500'
+                }`} />
+                {device.status}
+              </span>
+            </div>
+          </div>
 
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 600 }}>
-                    Device Code
-                  </Typography>
-                  <Typography variant="body1" sx={{ fontWeight: 700, color: 'primary.main', mb: 2 }}>
-                    {device.code}
-                  </Typography>
+          {/* Navigation Tabs Bar */}
+          <div className="flex items-center gap-2 border-b border-slate-200 bg-white px-2 pt-2 rounded-2xl border border-slate-200/90 shadow-2xs">
+            {[
+              { id: 'overview', label: 'Hardware Overview', icon: Cpu },
+              { id: 'telemetry', label: 'Live Telemetry', icon: Activity },
+              { id: 'commands', label: 'Command Console', icon: Terminal },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
 
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 600 }}>
-                    Device Type
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {device.device_type || '—'}
-                  </Typography>
-                </Grid>
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`flex items-center gap-2 px-4 py-3 text-xs font-bold transition-all border-b-2 cursor-pointer ${
+                    isActive
+                      ? 'border-[#2563EB] text-[#2563EB]'
+                      : 'border-transparent text-slate-500 hover:text-slate-900'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
 
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 600 }}>
-                    Gateway ID
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2, fontFamily: 'monospace', fontSize: '0.85rem' }}>
-                    {device.gateway_id}
-                  </Typography>
-
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 600 }}>
-                    Description
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {device.description || '—'}
-                  </Typography>
-                </Grid>
-
-                <Grid size={12}>
-                  <Divider sx={{ my: 2 }} />
-                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-                    Hardware Information
-                  </Typography>
-                </Grid>
-
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 600 }}>
-                    Manufacturer
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {device.manufacturer || '—'}
-                  </Typography>
-
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 600 }}>
-                    Model
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {device.model || '—'}
-                  </Typography>
-                  
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 600 }}>
-                    Serial Number
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {device.serial_number || '—'}
-                  </Typography>
-                </Grid>
-
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 600 }}>
-                    Hardware Version
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {device.hardware_version || '—'}
-                  </Typography>
-                  
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 600 }}>
-                    Firmware Version
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {device.firmware_version || '—'}
-                  </Typography>
-                </Grid>
+          {/* Tab 1: Overview */}
+          {activeTab === 'overview' && (
+            <div className="space-y-6">
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 
-                <Grid size={12}>
-                  <Divider sx={{ my: 2 }} />
-                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-                    Network Information
-                  </Typography>
-                </Grid>
-                
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 600 }}>
-                    IP Address
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2, fontFamily: 'monospace' }}>
-                    {device.ip_address || '—'}
-                  </Typography>
-                </Grid>
+                {/* General Info */}
+                <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs space-y-4">
+                  <div className="flex items-center gap-2 text-slate-900 font-bold text-sm border-b border-slate-100 pb-3">
+                    <Cpu className="w-4 h-4 text-[#2563EB]" />
+                    <span>General & Gateway Scope</span>
+                  </div>
 
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 600 }}>
-                    MAC Address
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2, fontFamily: 'monospace' }}>
-                    {device.mac_address || '—'}
-                  </Typography>
-                </Grid>
+                  <div className="space-y-3 text-xs">
+                    <div className="flex flex-col gap-1 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                      <span className="text-slate-400 font-semibold uppercase tracking-wider flex items-center gap-1">
+                        <Tag className="w-3 h-3" /> Device Code
+                      </span>
+                      <span className="text-sm font-bold text-[#2563EB] font-mono">
+                        {device.code}
+                      </span>
+                    </div>
 
-                <Grid size={12}>
-                  <Divider sx={{ my: 2 }} />
-                </Grid>
+                    <div className="flex flex-col gap-1 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                      <span className="text-slate-400 font-semibold uppercase tracking-wider flex items-center gap-1">
+                        <Layers className="w-3 h-3" /> Parent Gateway ID
+                      </span>
+                      <span className="text-xs font-mono text-slate-700 truncate">
+                        {device.gateway_id}
+                      </span>
+                    </div>
 
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 600 }}>
-                    Created
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {new Date(device.created_at).toLocaleString()}
-                  </Typography>
+                    <div className="flex flex-col gap-1 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                      <span className="text-slate-400 font-semibold uppercase tracking-wider flex items-center gap-1">
+                        <Clock className="w-3 h-3" /> Last Telemetry Connection
+                      </span>
+                      <span className="text-sm font-medium text-slate-900">
+                        {device.last_seen ? new Date(device.last_seen).toLocaleString() : 'Never'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
 
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 600 }}>
-                    Last Updated
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {new Date(device.updated_at).toLocaleString()}
-                  </Typography>
-                </Grid>
-                
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 600 }}>
-                    Last Seen
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {device.last_seen ? new Date(device.last_seen).toLocaleString() : 'Never'}
-                  </Typography>
-                </Grid>
-              </Grid>
-            </CustomTabPanel>
+                {/* Hardware Specs */}
+                <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs space-y-4">
+                  <div className="flex items-center gap-2 text-slate-900 font-bold text-sm border-b border-slate-100 pb-3">
+                    <Wrench className="w-4 h-4 text-[#2563EB]" />
+                    <span>Hardware Specifications</span>
+                  </div>
 
-            <CustomTabPanel value={tabIndex} index={1}>
-              <Grid container spacing={3}>
-                <Grid size={12}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <LiveIcon color="success" sx={{ mr: 1, animation: 'pulse 2s infinite' }} />
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                      Live Sensor Values
-                    </Typography>
-                  </Box>
-                </Grid>
+                  <div className="space-y-3 text-xs">
+                    <div className="flex flex-col gap-1 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                      <span className="text-slate-400 font-semibold uppercase tracking-wider flex items-center gap-1">
+                        <Building className="w-3 h-3" /> Manufacturer
+                      </span>
+                      <span className="text-sm font-medium text-slate-900">
+                        {device.manufacturer || '—'}
+                      </span>
+                    </div>
 
-                {(!telemetry || telemetry.length === 0) ? (
-                  <Grid size={12}>
-                    <Alert severity="info">No telemetry data received yet.</Alert>
-                  </Grid>
-                ) : (
-                  telemetry.map((point) => (
-                    <Grid size={{ xs: 12, sm: 4, md: 3 }} key={point.sensor_code}>
-                      <Card sx={{ bgcolor: 'background.default', border: `1px solid ${theme.palette.divider}` }}>
-                        <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase' }}>
-                            {point.sensor_code}
-                          </Typography>
-                          <Box sx={{ mt: 1, mb: 1, display: 'flex', alignItems: 'baseline' }}>
-                            <Typography variant="h4" sx={{ fontWeight: 700, color: 'primary.main', mr: 1 }}>
-                              {typeof point.value === 'number' ? Number(point.value).toFixed(2) : String(point.value)}
-                            </Typography>
-                            {point.data_type !== 'string' && point.data_type !== 'boolean' && (
-                              <Typography variant="subtitle2" color="text.secondary">
-                                {point.sensor_type}
-                              </Typography>
-                            )}
-                          </Box>
-                          <Typography variant="caption" color="text.secondary">
-                            Updated {dayjs(point.timestamp).fromNow()}
-                          </Typography>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  ))
-                )}
-              </Grid>
-            </CustomTabPanel>
+                    <div className="flex flex-col gap-1 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                      <span className="text-slate-400 font-semibold uppercase tracking-wider flex items-center gap-1">
+                        <Wrench className="w-3 h-3" /> Model
+                      </span>
+                      <span className="text-sm font-medium text-slate-900">
+                        {device.model || '—'}
+                      </span>
+                    </div>
 
-            <CustomTabPanel value={tabIndex} index={2}>
+                    <div className="flex flex-col gap-1 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                      <span className="text-slate-400 font-semibold uppercase tracking-wider flex items-center gap-1">
+                        <Hash className="w-3 h-3" /> Serial Number
+                      </span>
+                      <span className="text-xs font-mono font-bold text-slate-800">
+                        {device.serial_number || '—'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Network Specs & Description */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs space-y-4">
+                  <div className="flex items-center gap-2 text-slate-900 font-bold text-sm border-b border-slate-100 pb-3">
+                    <Network className="w-4 h-4 text-[#2563EB]" />
+                    <span>Network Parameters</span>
+                  </div>
+
+                  <div className="space-y-3 text-xs">
+                    <div className="flex flex-col gap-1 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                      <span className="text-slate-400 font-semibold uppercase tracking-wider">IP Address</span>
+                      <span className="text-sm font-bold font-mono text-slate-900">{device.ip_address || '—'}</span>
+                    </div>
+                    <div className="flex flex-col gap-1 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                      <span className="text-slate-400 font-semibold uppercase tracking-wider">MAC Address</span>
+                      <span className="text-sm font-bold font-mono text-slate-900">{device.mac_address || '—'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs space-y-4">
+                  <div className="flex items-center gap-2 text-slate-900 font-bold text-sm border-b border-slate-100 pb-3">
+                    <FileText className="w-4 h-4 text-[#2563EB]" />
+                    <span>Description</span>
+                  </div>
+                  <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
+                    {device.description || 'No description provided.'}
+                  </p>
+                </div>
+              </div>
+
+            </div>
+          )}
+
+          {/* Tab 2: Telemetry */}
+          {activeTab === 'telemetry' && (
+            <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs space-y-4">
+              <div className="flex items-center gap-2 text-slate-900 font-bold text-sm border-b border-slate-100 pb-3">
+                <Activity className="w-4 h-4 text-emerald-500 animate-pulse" />
+                <span>Live Streaming Telemetry Metrics</span>
+              </div>
+
+              {(!telemetry || telemetry.length === 0) ? (
+                <div className="p-8 text-center text-xs text-slate-400 font-medium bg-slate-50 rounded-xl border border-slate-200">
+                  No live telemetry points received yet for this device.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {telemetry.map((point) => (
+                    <div key={point.sensor_code} className="bg-slate-50 border border-slate-200/90 rounded-2xl p-4 shadow-2xs space-y-2">
+                      <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                        {point.sensor_code}
+                      </div>
+                      <div className="text-2xl font-extrabold text-[#2563EB] font-mono">
+                        {typeof point.value === 'number' ? Number(point.value).toFixed(2) : String(point.value)}
+                      </div>
+                      <div className="text-[11px] text-slate-400">
+                        Updated {dayjs(point.timestamp).fromNow()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Tab 3: Commands */}
+          {activeTab === 'commands' && (
+            <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs">
               <DeviceCommandsTab deviceId={device.id} />
-            </CustomTabPanel>
+            </div>
+          )}
 
-          </CardContent>
-        </Card>
+        </div>
       )}
-    </Box>
+    </div>
   );
 };

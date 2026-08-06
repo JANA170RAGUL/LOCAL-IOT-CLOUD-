@@ -22,3 +22,8 @@ pytest>=7.0.0
 pytest-cov>=4.0.0
 httpx>=0.24.0
 requests>=2.30.0
+loguru>=0.7.0
+email-validator>=2.0.0
+
+
+

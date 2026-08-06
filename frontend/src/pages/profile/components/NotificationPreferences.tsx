@@ -46,9 +46,9 @@ export const NotificationPreferences: React.FC = () => {
   };
 
   return (
-    <Card>
-      <CardContent>
-        <Typography variant="h6" gutterBottom>
+    <Card variant="outlined" sx={{ borderRadius: '12px', boxShadow: 'none' }}>
+      <CardContent sx={{ p: 3, '&:last-child': { pb: 3 } }}>
+        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, fontSize: '1.125rem' }}>
           Notification Preferences
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -56,16 +56,21 @@ export const NotificationPreferences: React.FC = () => {
         </Typography>
 
         <FormGroup>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <FormControlLabel
               control={
                 <Switch
                   checked={emailPref?.is_enabled ?? true}
                   onChange={handleEmailToggle}
                   disabled={mutation.isPending}
+                  color="primary"
                 />
               }
-              label="Email Notifications"
+              label={
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  Email Notifications
+                </Typography>
+              }
             />
             {mutation.isPending && <CircularProgress size={16} sx={{ ml: 2 }} />}
           </Box>

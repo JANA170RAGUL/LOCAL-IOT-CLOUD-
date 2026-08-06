@@ -24,6 +24,8 @@ export const getAppTheme = (mode: ThemeType): Theme => {
       },
       typography: {
         fontFamily: '"Outfit", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+        fontSize: 15,
+        htmlFontSize: 17,
       },
     });
   } else if (mode === 'enterprise-blue') {
@@ -47,6 +49,8 @@ export const getAppTheme = (mode: ThemeType): Theme => {
       },
       typography: {
         fontFamily: '"Outfit", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+        fontSize: 15,
+        htmlFontSize: 17,
       },
     });
   } else {
@@ -70,6 +74,8 @@ export const getAppTheme = (mode: ThemeType): Theme => {
       },
       typography: {
         fontFamily: '"Outfit", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+        fontSize: 15,
+        htmlFontSize: 17,
       },
     });
   }

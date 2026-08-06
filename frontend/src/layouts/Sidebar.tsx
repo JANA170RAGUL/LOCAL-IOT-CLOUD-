@@ -2,14 +2,15 @@ import React, { useState } from 'react';
 import { NavLink } from 'react-router';
 import {
   Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText,
-  Typography, Divider, GlobalStyles, Collapse, Tooltip
+  Typography, Divider, GlobalStyles, Collapse
 } from '@mui/material';
 import {
   Home, Sensors, Insights, NotificationsActive, Assessment,
   Business, CorporateFare, Folder, Hub, Router,
   Memory, SmartToy, Visibility, Group, Security, ReceiptLong,
-  Settings, Person, DarkMode, Help, ExitToApp,
-  Cloud, ExpandMore, ExpandLess, Circle, Notifications
+  Settings, Person, Help, ExitToApp,
+  Cloud, ExpandMore, ExpandLess, Circle, Notifications,
+  DeveloperBoard, Widgets, Tune, Psychology
 } from '@mui/icons-material';
 import { useAuthStore } from '../features/auth/store/useAuthStore';
 import { useNavigate } from 'react-router';
@@ -110,30 +111,35 @@ export const Sidebar: React.FC = () => {
   const navGroups: NavGroup[] = [
     {
       id: 'monitoring',
-      title: 'Monitoring',
+      title: 'Monitoring & Visualization',
       items: [
         { text: 'Dashboard', path: '/', icon: <Home /> },
+        { text: 'Widgets', path: '/widgets', icon: <Widgets /> },
         { text: 'Telemetry', path: '/telemetry', icon: <Sensors /> },
         { text: 'Analytics', path: '/analytics', icon: <Insights /> },
         { text: 'Alerts', path: '/alerts', icon: <NotificationsActive /> },
+        { text: 'Rule Builder', path: '/rules', icon: <Tune /> },
         { text: 'Reports', path: '/reports', icon: <Assessment /> },
       ]
     },
     {
       id: 'infrastructure',
-      title: 'Infrastructure',
+      title: 'Infrastructure & Devices',
       items: [
         { text: 'Organizations', path: '/organizations', icon: <Business /> },
         { text: 'Tenants', path: '/tenants', icon: <CorporateFare /> },
         { text: 'Projects', path: '/projects', icon: <Folder /> },
         { text: 'Channels', path: '/channels', icon: <Hub /> },
         { text: 'Gateways', path: '/gateways', icon: <Router /> },
+        { text: 'Devices', path: '/devices', icon: <DeveloperBoard /> },
+        { text: 'Sensors', path: '/sensors', icon: <Sensors /> },
       ]
     },
     {
       id: 'aiServices',
       title: 'AI Services',
       items: [
+        { text: 'AI Decision Engine', path: '/ai-engine', icon: <Psychology /> },
         { text: 'Models', path: '/ai/models', icon: <Memory /> },
         { text: 'AI Assistant', path: '/ai/assistant', icon: <SmartToy /> },
         { text: 'Vision', path: '/ai/vision', icon: <Visibility /> },

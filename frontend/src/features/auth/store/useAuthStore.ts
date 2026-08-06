@@ -18,27 +18,39 @@ interface AuthState {
 }
 
 // Load token from localStorage on initialization
-const token = localStorage.getItem('token');
+let validToken = localStorage.getItem('token');
 let initialUser = null;
-if (token) {
+
+if (validToken) {
   try {
-    const decoded: any = jwtDecode(token);
-    // You could also fetch full user here, but for now we'll just parse claims if they exist
-    // Actually getMe() should be called, but we will store user in localstorage for simplicity
+    const decoded: any = jwtDecode(validToken);
+    if (decoded && decoded.exp && decoded.exp * 1000 < Date.now()) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      validToken = null;
+    }
   } catch (e) {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    validToken = null;
   }
 }
 
-const savedUser = localStorage.getItem('user');
-if (savedUser) {
-  initialUser = JSON.parse(savedUser);
+if (validToken) {
+  const savedUser = localStorage.getItem('user');
+  if (savedUser) {
+    try {
+      initialUser = JSON.parse(savedUser);
+    } catch (e) {
+      initialUser = null;
+    }
+  }
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  token: token || null,
+  token: validToken,
   user: initialUser,
-  isAuthenticated: !!token,
+  isAuthenticated: !!validToken,
   setAuth: (token: string, user: User) => {
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(user));

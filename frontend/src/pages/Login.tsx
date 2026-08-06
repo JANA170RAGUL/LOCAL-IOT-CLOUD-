@@ -227,7 +227,7 @@ const Login = () => {
                     color: 'white', border: '1px solid rgba(255,255,255,0.4)',
                     boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                   }}>
-                    {React.cloneElement(feature.icon as React.ReactElement, { fontSize: 'small' })}
+                    {React.cloneElement(feature.icon as React.ReactElement<{ fontSize?: string }>, { fontSize: 'small' })}
                   </Box>
                   <Box>
                     <Typography sx={{ fontSize: '1rem', fontWeight: 600, color: 'white' }}>
@@ -293,12 +293,14 @@ const Login = () => {
                   required
                   type="email"
                   placeholder="name@company.com"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Email />
-                      </InputAdornment>
-                    ),
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Email />
+                        </InputAdornment>
+                      ),
+                    },
                   }}
                 />
               </Box>
@@ -316,12 +318,14 @@ const Login = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   placeholder="••••••••"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Lock />
-                      </InputAdornment>
-                    ),
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Lock />
+                        </InputAdornment>
+                      ),
+                    },
                   }}
                 />
               </Box>

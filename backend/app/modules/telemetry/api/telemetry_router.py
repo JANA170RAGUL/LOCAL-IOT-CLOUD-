@@ -9,6 +9,7 @@ Mounted at: /
 """
 
 import asyncio
+import json
 import logging
 from typing import Optional
 
@@ -21,6 +22,8 @@ from app.database.influx import query_api, settings
 from app.database.redis import get_redis_client
 from app.database.session import get_db
 from app.modules.devices.models.device import Device
+from app.modules.gateways.models.gateway import Gateway
+from app.modules.sensors.models.sensor import Sensor
 from app.modules.telemetry.schemas.telemetry import (
     TelemetryHistoryResponse,
     TelemetryLatestResponse,
@@ -108,11 +111,11 @@ def get_latest_telemetry(
       |> last()
     '''
 
+    tables = []
     try:
         tables = query_api.query(query, org=settings.influx_org)
     except Exception as e:
         logger.error(f"InfluxDB query failure: {e}")
-        return []
 
     # Map results
     latest_readings = {}
@@ -136,6 +139,26 @@ def get_latest_telemetry(
                 latest_readings[sensor_code]["value"] = val
             elif field == "raw_value":
                 latest_readings[sensor_code]["raw_value"] = val
+
+    # Redis Fallback if InfluxDB returned empty
+    if not latest_readings:
+        try:
+            r = get_redis_client()
+            keys = r.keys(f"telemetry:latest:{device_id}:*")
+            for k in keys:
+                raw_str = r.get(k)
+                if raw_str:
+                    item_data = json.loads(raw_str)
+                    s_code = item_data.get("sensor_code", "UNKNOWN")
+                    latest_readings[s_code] = {
+                        "sensor_code": s_code,
+                        "sensor_type": item_data.get("sensor_type", "sensor"),
+                        "value": item_data.get("value"),
+                        "raw_value": item_data.get("raw_value"),
+                        "timestamp": item_data.get("timestamp"),
+                    }
+        except Exception as r_err:
+            logger.warning(f"Redis latest fallback query failed: {r_err}")
 
     # Fill defaults if one of the fields is missing in the record
     results = []
@@ -205,16 +228,11 @@ def get_telemetry_history(
 
     query = "\n".join(flux_parts)
 
+    tables = []
     try:
         tables = query_api.query(query, org=settings.influx_org)
     except Exception as e:
         logger.error(f"InfluxDB history query failure: {e}")
-        return TelemetryHistoryResponse(
-            device_id=device_id,
-            sensor_codes=sensor_codes or [],
-            total_points=0,
-            items=[],
-        )
 
     # Pivot fields (raw_value and value) back to single object record
     pivoted_points = {}
@@ -237,6 +255,33 @@ def get_telemetry_history(
                 }
             pivoted_points[pkey][field] = val
 
+    # Redis Fallback if InfluxDB returned empty
+    if not pivoted_points:
+        try:
+            r = get_redis_client()
+            keys = r.keys(f"telemetry:history:{device_id}:*")
+            for k in keys:
+                hist_items = r.lrange(k, 0, 99)
+                for item_bytes in hist_items:
+                    item_data = json.loads(item_bytes)
+                    s_code = item_data.get("sensor_code", "UNKNOWN")
+                    ts_str = item_data.get("timestamp")
+                    
+                    if sensor_codes and s_code not in sensor_codes:
+                        continue
+
+                    pkey = (s_code, ts_str)
+                    if pkey not in pivoted_points:
+                        pivoted_points[pkey] = {
+                            "sensor_code": s_code,
+                            "sensor_type": item_data.get("sensor_type", "sensor"),
+                            "value": item_data.get("value"),
+                            "raw_value": item_data.get("raw_value"),
+                            "timestamp": ts_str,
+                        }
+        except Exception as r_err:
+            logger.warning(f"Redis history fallback query failed: {r_err}")
+
     # Convert to schema items
     items = []
     for read in pivoted_points.values():
@@ -251,7 +296,7 @@ def get_telemetry_history(
         )
 
     # Sort items by timestamp ascending
-    items.sort(key=lambda x: x.timestamp)
+    items.sort(key=lambda x: str(x.timestamp))
 
     return TelemetryHistoryResponse(
         device_id=device_id,
@@ -265,6 +310,26 @@ def get_telemetry_history(
 # WS /devices/{device_id}/telemetry/stream
 # ---------------------------------------------------------------------------
 
+def _resolve_device_id(device_or_sensor_id: str) -> str:
+    from sqlalchemy.orm import Session
+    from sqlalchemy import select, or_
+    from app.database.session import SessionLocal
+    from app.modules.devices.models.device import Device
+    from app.modules.sensors.models.sensor import Sensor
+
+    try:
+        with SessionLocal() as db:
+            device = db.scalar(select(Device).where(or_(Device.id == device_or_sensor_id, Device.code == device_or_sensor_id, Device.code.ilike(device_or_sensor_id))))
+            if not device:
+                sensor = db.scalar(select(Sensor).where(or_(Sensor.id == device_or_sensor_id, Sensor.code == device_or_sensor_id, Sensor.code.ilike(device_or_sensor_id))))
+                if sensor:
+                    device = db.scalar(select(Device).where(Device.id == sensor.device_id))
+            return device.id if device else device_or_sensor_id
+    except Exception as e:
+        logger.error(f"Error resolving device ID in WebSocket: {e}")
+        return device_or_sensor_id
+
+
 @router.websocket("/devices/{device_id}/telemetry/stream")
 async def websocket_telemetry_stream(
     websocket: WebSocket,
@@ -276,21 +341,11 @@ async def websocket_telemetry_stream(
     await websocket.accept()
     logger.info(f"WebSocket client connected to telemetry stream: {device_id}")
 
-    # Verify device
-    from app.database.session import SessionLocal
-    db = SessionLocal()
-    try:
-        device = db.scalar(select(Device).where(Device.id == device_id))
-        if not device or not device.is_active:
-            await websocket.send_json({"error": "Device not found or inactive."})
-            await websocket.close()
-            return
-    finally:
-        db.close()
+    target_device_id = await asyncio.to_thread(_resolve_device_id, device_id)
 
     r = get_redis_client()
     pubsub = r.pubsub()
-    pubsub.subscribe(f"telemetry:stream:{device_id}")
+    pubsub.subscribe(f"telemetry:stream:{target_device_id}")
 
     try:
         while True:
@@ -306,5 +361,5 @@ async def websocket_telemetry_stream(
     except WebSocketDisconnect:
         logger.info(f"WebSocket client disconnected from telemetry stream: {device_id}")
     finally:
-        pubsub.unsubscribe(f"telemetry:stream:{device_id}")
+        pubsub.unsubscribe(f"telemetry:stream:{target_device_id}")
         pubsub.close()

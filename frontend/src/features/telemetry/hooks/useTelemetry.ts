@@ -38,25 +38,50 @@ export const useTelemetryStream = (deviceId: string) => {
   useEffect(() => {
     if (!deviceId) return;
 
-    // The callback merges the incoming point into the query cache
-    const handleIncomingTelemetry = (newPoint: TelemetryLatest) => {
+    // The callback merges the incoming point into both latest and history query caches
+    const handleIncomingTelemetry = (newPoint: any) => {
+      // 1. Update latest telemetry cache for KPI / Gauge cards
       queryClient.setQueryData<TelemetryLatest[]>(
         telemetryKeys.latest(deviceId),
         (oldData) => {
           if (!oldData) return [newPoint];
-
-          // Check if sensor exists in cache
           const existingIndex = oldData.findIndex((p) => p.sensor_code === newPoint.sensor_code);
-          
           if (existingIndex > -1) {
-            // Replace the old point with the new one
             const updated = [...oldData];
             updated[existingIndex] = newPoint;
             return updated;
           } else {
-            // Append new sensor
             return [...oldData, newPoint];
           }
+        }
+      );
+
+      // 2. Update history telemetry cache for Line, Area, and Bar Chart streaming
+      queryClient.setQueriesData<any>(
+        { queryKey: telemetryKeys.all },
+        (oldData: any, query: any) => {
+          const key = query?.queryKey;
+          if (key && key[1] === 'history' && key[2] === deviceId && oldData && Array.isArray(oldData.items)) {
+            const sensorCodes = key[3]?.sensor_codes;
+            if (!sensorCodes || sensorCodes.includes(newPoint.sensor_code)) {
+              const formattedPoint = {
+                sensor_code: newPoint.sensor_code,
+                sensor_type: newPoint.sensor_type || 'sensor',
+                value: typeof newPoint.value === 'number' ? newPoint.value : Number(newPoint.value),
+                raw_value: newPoint.raw_value ?? newPoint.value,
+                timestamp: newPoint.timestamp || new Date().toISOString(),
+              };
+
+              // Append incoming point and keep up to 100 live time-series points
+              const updatedItems = [...oldData.items, formattedPoint].slice(-100);
+              return {
+                ...oldData,
+                total_points: updatedItems.length,
+                items: updatedItems,
+              };
+            }
+          }
+          return oldData;
         }
       );
     };

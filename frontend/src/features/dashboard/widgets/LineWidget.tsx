@@ -2,11 +2,14 @@ import React from 'react';
 import { Box, CircularProgress, Typography, Alert } from '@mui/material';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
 import { LineChart } from '../../../components/charts/LineChart';
-import { useTelemetryHistoryQuery } from '../../telemetry/hooks/useTelemetry';
+import { useTelemetryHistoryQuery, useTelemetryStream } from '../../telemetry/hooks/useTelemetry';
 import type { WidgetConfig } from '../types';
 import type { WidgetManifest } from '../registry/types';
 
 export const LineWidget: React.FC<{ config: WidgetConfig }> = ({ config }) => {
+  // Connect live stream if refresh is live
+  useTelemetryStream(config.refresh === 'live' ? config.deviceId : '');
+
   // Convert friendly range to API params
   const rangeMap: Record<string, { start: string; window: string }> = {
     '15m': { start: '-15m', window: '10s' },
@@ -55,7 +58,7 @@ export const LineWidget: React.FC<{ config: WidgetConfig }> = ({ config }) => {
 
   // Filter numeric values only
   const numericData = data.items
-    .filter(d => typeof d.value === 'number')
+    .filter(d => typeof d.value === 'number' || !isNaN(Number(d.value)))
     .map(d => ({ timestamp: d.timestamp, value: Number(d.value) }));
 
   return (

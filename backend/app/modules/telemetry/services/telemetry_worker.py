@@ -103,6 +103,14 @@ class TelemetryWorker:
                     }
                     r.publish(f"telemetry:stream:{device_id}", json.dumps(pubsub_msg))
 
+                    # Cache latest & history points in Redis for instant query fallback
+                    try:
+                        r.set(f"telemetry:latest:{device_id}:{normalized['sensor_code']}", json.dumps(pubsub_msg))
+                        r.lpush(f"telemetry:history:{device_id}:{normalized['sensor_code']}", json.dumps(pubsub_msg))
+                        r.ltrim(f"telemetry:history:{device_id}:{normalized['sensor_code']}", 0, 99)
+                    except Exception as cache_err:
+                        logger.warning(f"Failed caching telemetry in Redis: {cache_err}")
+
                     # Run Rule Engine evaluation
                     try:
                         from app.modules.rules.engine.runner import RuleEngineRunner

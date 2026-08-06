@@ -1,0 +1,16 @@
+{
+  "customer": "VYPHERA_GROUPS",
+  "license_key": "LIC-VYPHERA_-202608041635",
+  "plan": "Enterprise",
+  "expires": "2027-08-04T11:05:14Z",
+  "machine": "79B17472B8685F66FA4E7E8FA9C808464BAFC7572BA05B81528FCAB6252C9626",
+  "features": {
+    "devices": -1,
+    "gateways": -1,
+    "dashboards": -1,
+    "analytics": true,
+    "ai": true,
+    "reports": true
+  },
+  "signature": "dJJ+y6Knhbi7wIZPllL8K6A5CYQJ4GoU2SvcRy2ymdghmy9nlvuuo+39VIHPCuDxnuKSrPEhouJGG8vbU75xW+Q8+Z6TCnUr1VB+X2iah4a8bsy6HtK9OFGGnkgwtALIoVeKVR1mWC0wQ9jJoHPkAgIHkyrNQMuMAEUqJi5+FTY9rUijJ2tkVIzqel7fbNXAcZuLYUoklS273ycSaFcKS832aM2jO71w835hH6uYMi61vcEG8A23RmagkYQrF65te5blJSg5ap8x7T/7e1PhwVOFcHZFm8QuFAwNRZCeoaqS/HvFUfkGw8Ha3++z6EtMGyq8bkScPzR82fSiGn8HSw=="
+}

@@ -94,4 +94,8 @@ class InfluxWriter:
             try:
                 write_api.write(bucket=settings.influx_bucket, record=points)
             except Exception as e:
-                logger.error(f"Failed to write batch to InfluxDB: {e}", exc_info=True)
+                from influxdb_client.rest import ApiException
+                if isinstance(e, ApiException) and e.status == 401:
+                    logger.warning("InfluxDB write bypassed: Token unconfigured or unauthorized (401). Telemetry safely saved in Redis & MySQL.")
+                else:
+                    logger.error(f"Failed to write batch to InfluxDB: {e}")

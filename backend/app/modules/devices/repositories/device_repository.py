@@ -18,6 +18,17 @@ class DeviceRepository(BaseRepository[Device]):
     def __init__(self):
         super().__init__(Device)
 
+    def get_by_id(self, db: Session, obj_id: str) -> Device | None:
+        """Fetch a device by UUID primary key or by code."""
+        stmt = select(Device).where(
+            or_(
+                Device.id == obj_id,
+                Device.code == obj_id,
+                Device.code.ilike(obj_id),
+            )
+        )
+        return db.scalar(stmt)
+
     # ── Single-row lookups ────────────────────────────────────────────────────
 
     def get_by_code(

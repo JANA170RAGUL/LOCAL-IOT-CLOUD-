@@ -18,6 +18,17 @@ class SensorRepository(BaseRepository[Sensor]):
     def __init__(self):
         super().__init__(Sensor)
 
+    def get_by_id(self, db: Session, obj_id: str) -> Sensor | None:
+        """Fetch a sensor by UUID primary key or by code."""
+        stmt = select(Sensor).where(
+            or_(
+                Sensor.id == obj_id,
+                Sensor.code == obj_id,
+                Sensor.code.ilike(obj_id),
+            )
+        )
+        return db.scalar(stmt)
+
     # ── Single-row lookups ────────────────────────────────────────────────────
 
     def get_by_code(

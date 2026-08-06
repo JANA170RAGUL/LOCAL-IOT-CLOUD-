@@ -3,6 +3,7 @@ import { Outlet } from 'react-router';
 import { Box } from '@mui/material';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
+import { AIEngineFloatingButton } from '../components/AIEngineFloatingButton';
 
 export const AppLayout: React.FC = () => {
   return (
@@ -37,6 +38,9 @@ export const AppLayout: React.FC = () => {
           <Outlet />
         </Box>
       </Box>
+
+      {/* Global Futuristic Floating AI Engine Button */}
+      <AIEngineFloatingButton />
     </Box>
   );
 };

@@ -2,11 +2,14 @@ import React from 'react';
 import { Box, CircularProgress, Typography, Alert } from '@mui/material';
 import TimelineIcon from '@mui/icons-material/Timeline';
 import { AreaChart } from '../../../components/charts/AreaChart';
-import { useTelemetryHistoryQuery } from '../../telemetry/hooks/useTelemetry';
+import { useTelemetryHistoryQuery, useTelemetryStream } from '../../telemetry/hooks/useTelemetry';
 import type { WidgetConfig } from '../types';
 import type { WidgetManifest } from '../registry/types';
 
 export const AreaWidget: React.FC<{ config: WidgetConfig }> = ({ config }) => {
+  // Connect live WebSocket stream if refresh is live
+  useTelemetryStream(config.refresh === 'live' ? config.deviceId : '');
+
   const rangeMap: Record<string, { start: string; window: string }> = {
     '15m': { start: '-15m', window: '10s' },
     '1h': { start: '-1h', window: '1m' },
