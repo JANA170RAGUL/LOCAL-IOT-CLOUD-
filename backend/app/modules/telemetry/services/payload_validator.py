@@ -20,10 +20,10 @@ class RawTelemetryPayload(BaseModel):
         "timestamp": "2026-07-12T12:00:01Z"
     }
     """
-    device: str = Field(..., min_length=1, description="Device code or device UUID")
-    sensor: str = Field(..., min_length=1, description="Sensor code")
+    device: str = Field(..., min_length=1, max_length=64, description="Server-resolved device UUID")
+    sensor: str = Field(..., min_length=1, max_length=50, description="Registered sensor code")
     value: Union[float, int, bool, str] = Field(..., description="Telemetry reading value")
-    timestamp: Optional[str] = Field(None, description="Optional ISO-8601 timestamp")
+    timestamp: Optional[str] = Field(None, max_length=64, description="Optional ISO-8601 timestamp")
 
 
 class PayloadValidator:

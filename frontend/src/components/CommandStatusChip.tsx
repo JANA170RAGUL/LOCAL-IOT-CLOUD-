@@ -1,5 +1,5 @@
 import React from 'react';
-import { Chip, ChipProps } from '@mui/material';
+import { Chip, ChipProps, Tooltip } from '@mui/material';
 import { CommandStatus } from '../features/commands/types/command';
 
 interface CommandStatusChipProps extends Omit<ChipProps, 'color'> {
@@ -8,31 +8,51 @@ interface CommandStatusChipProps extends Omit<ChipProps, 'color'> {
 
 export const CommandStatusChip: React.FC<CommandStatusChipProps> = ({ status, ...props }) => {
   let color: ChipProps['color'] = 'default';
-  
-  switch (status) {
-    case 'Queued':
+  const normStatus = (status || '').toString().toUpperCase();
+
+  switch (normStatus) {
+    case 'QUEUED':
       color = 'info';
       break;
-    case 'Sent':
-      color = 'warning';
+    case 'SENT':
+      color = 'info';
       break;
-    case 'Executed':
+    case 'ACKNOWLEDGED':
+      color = 'primary';
+      break;
+    case 'EXECUTED':
       color = 'success';
       break;
-    case 'Failed':
+    case 'FAILED':
       color = 'error';
+      break;
+    case 'TIMED_OUT':
+      color = 'warning';
+      break;
+    case 'CANCELLED':
+      color = 'default';
       break;
     default:
       color = 'default';
   }
 
-  return (
+  const chipElement = (
     <Chip
-      label={status}
+      label={normStatus}
       color={color}
       size="small"
       variant="outlined"
       {...props}
     />
   );
+
+  if (normStatus === 'TIMED_OUT') {
+    return (
+      <Tooltip title="Execution could not be confirmed">
+        <span>{chipElement}</span>
+      </Tooltip>
+    );
+  }
+
+  return chipElement;
 };

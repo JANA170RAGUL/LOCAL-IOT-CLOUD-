@@ -16,7 +16,7 @@ def generate_organization_license(
     customer_name: str,
     plan: str = "Enterprise",
     days_valid: int = 365,
-    machine_fingerprint: str = None,
+    machine_fingerprint: str | None = None,
     output_file: str = "org_license.lic",
 ):
     """

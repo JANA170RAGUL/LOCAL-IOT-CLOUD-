@@ -32,6 +32,9 @@ from app.modules.projects.schemas.project import (
 )
 from app.modules.projects.services.project_service import ProjectService
 
+from app.core.access_scope import AccessScope, get_access_scope
+from app.core.tenant_guard import TenantGuard
+
 router = APIRouter(
     tags=["Projects"],
 )
@@ -53,7 +56,9 @@ def create_project(
     payload: ProjectCreate,
     db: Session = Depends(get_db),
     svc: ProjectService = Depends(get_project_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> ProjectResponse:
+    TenantGuard.tenant(db, tenant_id, scope)
     return svc.create_project(db, tenant_id, payload)
 
 
@@ -80,7 +85,9 @@ def list_projects(
     page_size: int = Query(DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE, description="Items per page"),
     db: Session = Depends(get_db),
     svc: ProjectService = Depends(get_project_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> ProjectListResponse:
+    TenantGuard.tenant(db, tenant_id, scope)
     filters = ProjectFilter(
         search=search,
         status=project_status,
@@ -104,7 +111,9 @@ def get_project(
     project_id: str,
     db: Session = Depends(get_db),
     svc: ProjectService = Depends(get_project_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> ProjectResponse:
+    TenantGuard.project(db, project_id, scope)
     return svc.get_project(db, project_id)
 
 
@@ -123,7 +132,9 @@ def patch_project(
     payload: ProjectUpdate,
     db: Session = Depends(get_db),
     svc: ProjectService = Depends(get_project_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> ProjectResponse:
+    TenantGuard.project(db, project_id, scope)
     return svc.update_project(db, project_id, payload)
 
 
@@ -142,7 +153,9 @@ def put_project(
     payload: ProjectUpdate,
     db: Session = Depends(get_db),
     svc: ProjectService = Depends(get_project_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> ProjectResponse:
+    TenantGuard.project(db, project_id, scope)
     return svc.update_project(db, project_id, payload)
 
 
@@ -160,5 +173,7 @@ def delete_project(
     project_id: str,
     db: Session = Depends(get_db),
     svc: ProjectService = Depends(get_project_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> dict:
+    TenantGuard.project(db, project_id, scope)
     return svc.deactivate_project(db, project_id)

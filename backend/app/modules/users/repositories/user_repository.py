@@ -17,11 +17,20 @@ class UserRepository(BaseRepository[User]):
     def get_by_tenant(self, db: Session, tenant_id: str) -> list[User]:
         return db.query(self.model).filter(self.model.tenant_id == tenant_id).all()
 
-    def list(self, db: Session, filters: UserFilter, tenant_id: Optional[str] = None) -> dict:
+    def list(
+        self,
+        db: Session,
+        filters: UserFilter,
+        tenant_id: Optional[str] = None,
+        organization_id: Optional[str] = None
+    ) -> dict:
         query = db.query(self.model)
 
-        if tenant_id:
+        if organization_id:
+            query = query.filter(self.model.organization_id == organization_id)
+        elif tenant_id:
             query = query.filter(self.model.tenant_id == tenant_id)
+
 
         if filters.search:
             search_term = f"%{filters.search}%"

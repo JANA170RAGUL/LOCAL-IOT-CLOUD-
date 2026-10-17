@@ -10,23 +10,46 @@ from app.modules.channels.repositories.channel_repository import ChannelReposito
 from app.modules.channels.services.channel_data_service import ChannelDataService
 from app.modules.channels.services.webhook_dispatcher import webhook_dispatcher
 
+from app.config.settings import settings
+from app.modules.channels.security.authenticator import ChannelKeyAuthenticator
+from app.modules.channels.services.upload_limiter import read_limited_upload
+
 router = APIRouter(prefix="/channels", tags=["channels data"])
 
 def get_channel_repo(db: Session = Depends(get_db)) -> ChannelRepository:
     return ChannelRepository(db)
 
-def validate_channel_and_key(channel_id: str, api_key: str, key_type: ApiKeyType, repo: ChannelRepository) -> Channel:
-    channel = repo.get_by_id(channel_id)
+def _extract_api_key(request: Request, payload_dict: Optional[Dict[str, Any]] = None) -> Optional[str]:
+    header_key = request.headers.get("X-Channel-Key")
+    if header_key:
+        return header_key.strip()
+    
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header[7:].strip()
+        if token.startswith("liot_ch_"):
+            return token
+
+    if payload_dict and "api_key" in payload_dict:
+        return str(payload_dict.pop("api_key")).strip()
+
+    query_key = request.query_params.get("api_key")
+    if query_key:
+        return query_key.strip()
+
+    return None
+
+def validate_channel_and_key(channel_id: Optional[str], api_key: str, key_type: ApiKeyType, repo: ChannelRepository) -> Channel:
+    required_str = key_type.value if hasattr(key_type, "value") else str(key_type).upper()
+    credential = ChannelKeyAuthenticator.authenticate(repo.db, api_key, required_type=required_str)
+
+    channel = repo.get_by_id(credential.channel_id)
     if not channel:
         raise HTTPException(status_code=404, detail="Channel not found")
-    if not getattr(channel, "is_active", True):
-        raise HTTPException(status_code=403, detail="Channel is disabled")
-    
-    # Validate API Key
-    valid_key = next((k for k in channel.api_keys if k.api_key == api_key and k.key_type == key_type), None)
-    if not valid_key:
-        raise HTTPException(status_code=401, detail="Invalid API Key")
-    
+
+    if channel_id and channel.id != channel_id:
+        raise HTTPException(status_code=403, detail="API key does not belong to the requested channel")
+
     return channel
 
 def validate_channel_read(
@@ -38,34 +61,30 @@ def validate_channel_read(
     channel = repo.get_by_id(channel_id)
     if not channel:
         raise HTTPException(status_code=404, detail="Channel not found")
-        
+
     from app.modules.channels.models.channel import ChannelVisibility
-    
+
     if channel.visibility == ChannelVisibility.PUBLIC:
-        # Public: No auth needed
         return channel
-        
+
     elif channel.visibility == ChannelVisibility.ENTERPRISE:
-        # Enterprise: Requires valid JWT + RBAC logic
-        # For now, require user to be logged in and the owner of the channel (or project member eventually)
         if not current_user:
             raise HTTPException(status_code=401, detail="Authentication required for Enterprise channels")
         if channel.owner_id != current_user.id:
             raise HTTPException(status_code=403, detail="Not authorized to access this Enterprise channel")
         return channel
-        
+
     else: # PRIVATE
-        # Private: Requires valid Read API Key, or being the owner
         if current_user and channel.owner_id == current_user.id:
             return channel
-            
+
         if not api_key:
             raise HTTPException(status_code=401, detail="Read API Key required for private channel")
-            
-        valid_key = next((k for k in channel.api_keys if k.api_key == api_key and k.key_type == ApiKeyType.READ), None)
-        if not valid_key:
-            raise HTTPException(status_code=401, detail="Invalid Read API Key")
-        
+
+        credential = ChannelKeyAuthenticator.authenticate(repo.db, api_key, required_type="READ")
+        if credential.channel_id != channel.id:
+            raise HTTPException(status_code=403, detail="API key does not belong to this channel")
+
         return channel
 
 # --- WRITE ENDPOINTS ---
@@ -78,10 +97,6 @@ async def write_channel_data(
     channel_id: Optional[str] = None,
     repo: ChannelRepository = Depends(get_channel_repo)
 ):
-    """
-    Write data to a channel. 
-    Supports application/json and application/x-www-form-urlencoded.
-    """
     content_type = request.headers.get("content-type", "")
     data: Dict[str, Any] = {}
 
@@ -94,32 +109,18 @@ async def write_channel_data(
         form_data = await request.form()
         data = dict(form_data)
     else:
-        # Fallback to query params if no body is provided (like ThingSpeak allows)
         data = dict(request.query_params)
         if not data:
             raise HTTPException(status_code=400, detail="Unsupported content type and no query params provided")
 
-    # API key can come from payload or query param
-    api_key = data.pop("api_key", request.query_params.get("api_key"))
-    
-    # If using /channels/write, the channel_id must be inferred from the API Key or provided in payload
-    if not channel_id:
-        channel_id = data.pop("channel_id", request.query_params.get("channel_id"))
-        if not channel_id:
-            # Look up channel by API key
-            key_record = repo.db.query(ChannelApiKey).filter(ChannelApiKey.api_key == api_key).first()
-            if not key_record:
-                raise HTTPException(status_code=401, detail="Invalid API Key or missing channel_id")
-            channel_id = key_record.channel_id
-
+    api_key = _extract_api_key(request, data)
     if not api_key:
-        raise HTTPException(status_code=401, detail="Missing api_key")
+        raise HTTPException(status_code=401, detail="Missing Channel API key")
 
     channel = validate_channel_and_key(channel_id, api_key, ApiKeyType.WRITE, repo)
-    
+
     try:
         ChannelDataService.write_data(channel, data)
-        # Dispatch webhook for telemetry.received
         webhook_dispatcher.trigger_event(repo.db, channel.id, "telemetry.received", data, background_tasks)
         return {"status": "success", "channel_id": channel.id}
     except ValueError as e:
@@ -135,12 +136,7 @@ async def write_channel_data_bulk(
     channel_id: Optional[str] = None,
     repo: ChannelRepository = Depends(get_channel_repo)
 ):
-    """
-    Write bulk data to a channel. 
-    Expects a JSON array of payload objects.
-    """
     content_type = request.headers.get("content-type", "")
-    
     if "application/json" not in content_type:
         raise HTTPException(status_code=415, detail="Bulk writes only support application/json")
 
@@ -154,36 +150,19 @@ async def write_channel_data_bulk(
     if not data_list:
         raise HTTPException(status_code=400, detail="Empty bulk array")
 
-    # The API key can be provided in query params or in the first element of the array
-    api_key = request.query_params.get("api_key")
-    if not api_key:
-        api_key = data_list[0].get("api_key")
+    max_points = getattr(settings, "channel_bulk_max_points", 1000)
+    if len(data_list) > max_points:
+        raise HTTPException(status_code=413, detail=f"Bulk upload exceeds max entries limit of {max_points}.")
 
-    if not channel_id:
-        channel_id = request.query_params.get("channel_id")
-        if not channel_id:
-            channel_id = data_list[0].get("channel_id")
-        
-        if not channel_id and api_key:
-            # Look up channel by API key
-            key_record = repo.db.query(ChannelApiKey).filter(ChannelApiKey.api_key == api_key).first()
-            if key_record:
-                channel_id = key_record.channel_id
-
+    api_key = _extract_api_key(request, data_list[0] if data_list else None)
     if not api_key:
         raise HTTPException(status_code=401, detail="Missing api_key")
-    if not channel_id:
-        raise HTTPException(status_code=401, detail="Missing channel_id")
 
     channel = validate_channel_and_key(channel_id, api_key, ApiKeyType.WRITE, repo)
-    
+
     try:
         ChannelDataService.write_data_bulk(channel, data_list)
-        # Dispatch webhooks for bulk import / bulk write
-        # We can trigger a single event "telemetry.bulk_received" or "import.completed"
-        # Since it's bulk, let's just trigger one event
         webhook_dispatcher.trigger_event(repo.db, channel.id, "telemetry.bulk_received", {"count": len(data_list)}, background_tasks)
-        
         return {"status": "success", "channel_id": channel.id, "records_written": len(data_list)}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -199,25 +178,30 @@ async def import_channel_data_endpoint(
     current_user: Optional[User] = Depends(get_current_user_optional),
     repo: ChannelRepository = Depends(get_channel_repo)
 ):
-    if format not in ["csv", "excel", "json"]:
+    norm_format = format.lower()
+    if norm_format in ["excel", "xlsx"]:
+        norm_format = "excel"
+    elif norm_format not in ["csv", "json"]:
         raise HTTPException(status_code=400, detail="Unsupported format. Use csv, excel, or json.")
-        
-    # We must allow either API key (write key) or JWT ownership
+
     channel = None
     if current_user:
         ch = repo.get_by_id(channel_id)
         if ch and ch.owner_id == current_user.id:
             channel = ch
-    
+
     if not channel:
         if not api_key:
             raise HTTPException(status_code=401, detail="Missing api_key or authentication")
         channel = validate_channel_and_key(channel_id, api_key, ApiKeyType.WRITE, repo)
-        
+
     try:
-        content = await file.read()
-        summary = ChannelDataService.import_channel_data(channel, content, format)
+        max_bytes = getattr(settings, "channel_import_max_bytes", 5 * 1024 * 1024)
+        content = await read_limited_upload(file, max_bytes=max_bytes)
+        summary = ChannelDataService.import_channel_data(channel, content, norm_format)
         return summary
+    except HTTPException:
+        raise
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

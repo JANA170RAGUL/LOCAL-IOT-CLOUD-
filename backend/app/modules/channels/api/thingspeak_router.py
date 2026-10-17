@@ -55,12 +55,18 @@ async def thingspeak_update(
             data = await request.json()
         except Exception:
             pass
-    elif "application/x-www-form-urlencoded" in content_type:
-        form_data = await request.form()
-        data = dict(form_data)
+    elif "application/x-www-form-urlencoded" in content_type or "multipart/form-data" in content_type:
+        try:
+            form_data = await request.form()
+            data = dict(form_data)
+        except Exception:
+            pass
     
     # Merge query params (ThingSpeak often uses GET for updates, or POST with query params)
-    data.update(dict(request.query_params))
+    try:
+        data.update(dict(request.query_params))
+    except Exception:
+        pass
 
     api_key = data.pop("api_key", None)
     
@@ -68,16 +74,9 @@ async def thingspeak_update(
         # ThingSpeak returns 0 for failure (or HTTP errors)
         return 0
 
-    # Look up channel by API key
-    key_record = repo.db.query(ChannelApiKey).filter(ChannelApiKey.api_key == api_key).first()
-    if not key_record:
-        return 0
-        
-    channel_id = key_record.channel_id
-    
     try:
-        channel = validate_channel_and_key(channel_id, api_key, ApiKeyType.WRITE, repo)
-    except HTTPException:
+        channel = validate_channel_and_key(None, api_key, ApiKeyType.WRITE, repo)
+    except Exception:
         return 0
 
     # Filter data to only include known fields
@@ -93,8 +92,7 @@ async def thingspeak_update(
         ChannelDataService.write_data(channel, write_data)
         webhook_dispatcher.trigger_event(repo.db, channel.id, "telemetry.received", write_data, background_tasks)
         
-        # ThingSpeak usually returns an entry ID on success. We don't have integer IDs for entries easily, so we return 1 or total count.
-        # Returning a non-zero integer signifies success in ThingSpeak.
+        # ThingSpeak usually returns an entry ID on success. Return 1 to signify success.
         return 1 
     except Exception:
         return 0

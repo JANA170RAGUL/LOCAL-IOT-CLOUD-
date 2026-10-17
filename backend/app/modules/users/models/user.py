@@ -1,29 +1,36 @@
-from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Integer, func
+from datetime import datetime
+from typing import Optional, List
+from sqlalchemy import String, Boolean, DateTime, ForeignKey, Integer
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 from app.database.base import BaseModel
 
 class User(BaseModel):
     __tablename__ = "users"
 
-    organization_id = Column(String(36), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=True)
-    tenant_id = Column(String(36), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=True)
+    organization_id: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=True)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=True)
     
-    first_name = Column(String(100), nullable=False)
-    last_name = Column(String(100), nullable=False)
+    first_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    last_name: Mapped[str] = mapped_column(String(100), nullable=False)
     
-    email = Column(String(255), unique=True, index=True, nullable=False)
-    phone = Column(String(50), nullable=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
+    phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     
-    password_hash = Column(String(255), nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     
-    role = Column(String(50), nullable=False, default="Viewer")
-    status = Column(String(50), nullable=False, default="ACTIVE")
+    role: Mapped[str] = mapped_column(String(50), nullable=False, default="Viewer")
+    status: Mapped[str] = mapped_column(String(50), nullable=False, default="ACTIVE")
     
-    last_login = Column(DateTime(timezone=True), nullable=True)
+    last_login: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Security fields
-    is_verified = Column(Boolean, nullable=False, default=False)
-    force_password_change = Column(Boolean, nullable=False, default=False)
-    avatar_url = Column(String(500), nullable=True)
-    password_changed_at = Column(DateTime(timezone=True), nullable=True)
-    failed_login_attempts = Column(Integer, nullable=False, default=0)
-    locked_until = Column(DateTime(timezone=True), nullable=True)
+    is_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    force_password_change: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    avatar_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    password_changed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    failed_login_attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    locked_until: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # Relationships
+    sessions = relationship("UserSession", back_populates="user", cascade="all, delete-orphan")
+

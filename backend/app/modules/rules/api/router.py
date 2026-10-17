@@ -19,6 +19,10 @@ from app.modules.rules.schemas.rule import (
 )
 from app.modules.rules.services.rule_service import RuleService
 
+from fastapi import HTTPException
+from app.core.access_scope import AccessScope, get_access_scope
+from app.core.tenant_guard import TenantGuard
+
 router = APIRouter(
     tags=["Rules"],
 )
@@ -36,7 +40,16 @@ def create_rule(
     payload: RuleCreate,
     db: Session = Depends(get_db),
     svc: RuleService = Depends(get_rule_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> RuleResponse:
+    TenantGuard.project(db, project_id, scope)
+    if getattr(payload, "sensor_id", None):
+        sensor = TenantGuard.sensor(db, payload.sensor_id, scope)
+        if sensor.device and sensor.device.gateway and sensor.device.gateway.project_id != project_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Sensor does not belong to the selected project.",
+            )
     return svc.create_rule(db, project_id, payload)
 
 
@@ -55,7 +68,9 @@ def list_rules(
     page_size: int = Query(DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE, alias="page_size", description="Items per page"),
     db: Session = Depends(get_db),
     svc: RuleService = Depends(get_rule_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> RuleListResponse:
+    TenantGuard.project(db, project_id, scope)
     filters = RuleFilter(status=status_filter, enabled=enabled, search=search)
     total, items = svc.list_rules(db, project_id, filters, page, page_size)
     return RuleListResponse(
@@ -76,7 +91,9 @@ def get_rule(
     rule_id: str,
     db: Session = Depends(get_db),
     svc: RuleService = Depends(get_rule_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> RuleResponse:
+    TenantGuard.rule(db, rule_id, scope)
     return svc.get_rule(db, rule_id)
 
 
@@ -91,7 +108,9 @@ def update_rule(
     payload: RuleUpdate,
     db: Session = Depends(get_db),
     svc: RuleService = Depends(get_rule_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> RuleResponse:
+    TenantGuard.rule(db, rule_id, scope)
     return svc.update_rule(db, rule_id, payload)
 
 
@@ -105,5 +124,7 @@ def deactivate_rule(
     rule_id: str,
     db: Session = Depends(get_db),
     svc: RuleService = Depends(get_rule_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> None:
+    TenantGuard.rule(db, rule_id, scope)
     svc.deactivate_rule(db, rule_id)

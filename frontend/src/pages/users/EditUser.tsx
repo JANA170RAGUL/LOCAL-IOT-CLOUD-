@@ -17,13 +17,19 @@ import SaveIcon from '@mui/icons-material/Save';
 import { PageHeader } from '@/components/PageHeader';
 import { userApi } from '@/features/users/api/user';
 import type { UserUpdate } from '@/features/users/types';
+import { useAuthStore } from '@/features/auth/store/useAuthStore';
 
 export function EditUser() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user: currentUser } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isSuperAdmin = currentUser?.role === 'Super Admin';
+  const isEditingSelf = currentUser?.id === id;
+
 
   const [formData, setFormData] = useState<UserUpdate>({
     first_name: '',
@@ -153,13 +159,14 @@ export function EditUser() {
                 fullWidth
                 label="Role"
                 value={formData.role}
+                disabled={isEditingSelf}
+                helperText={isEditingSelf ? "You cannot modify your own role" : undefined}
                 onChange={e => setFormData({...formData, role: e.target.value})}
               >
-                <MenuItem value="Super Admin">Super Admin</MenuItem>
+                {isSuperAdmin && <MenuItem value="Super Admin">Super Admin</MenuItem>}
                 <MenuItem value="Org Admin">Org Admin</MenuItem>
                 <MenuItem value="Operator">Operator</MenuItem>
                 <MenuItem value="Viewer">Viewer</MenuItem>
-                <MenuItem value="Developer">Developer</MenuItem>
               </TextField>
             </Grid>
             <Grid sx={{ width: { xs: '100%', sm: '50%' } }}>

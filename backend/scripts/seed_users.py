@@ -19,7 +19,12 @@ from app.modules.alerts.models.alert import Alert
 from app.modules.users.models.user import User
 from app.core.password import hash_password
 
+from app.config.settings import settings
+
 def seed_users():
+    if settings.app_env.lower() == "production":
+        raise RuntimeError("Development user seeding is disabled in production environments.")
+
     db = SessionLocal()
     try:
         users_to_seed = [
@@ -27,8 +32,8 @@ def seed_users():
                 "email": "admin@localiot.com",
                 "first_name": "Super",
                 "last_name": "Admin",
-                "password": "Password@123",
-                "role": "Admin",
+                "password": os.getenv("SEED_ADMIN_PASSWORD", "Password@123"),
+                "role": "Super Admin",
             },
 
         ]

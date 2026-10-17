@@ -1,19 +1,44 @@
 """
-app/modules/telemetry/dependencies.py
-
-FastAPI ``Depends()`` helpers scoped to the Telemetry module.
+FastAPI dependencies for telemetry endpoints.
 """
 
-from __future__ import annotations
+from fastapi import Depends, Header, HTTPException, status
+from sqlalchemy.orm import Session
 
-# from app.modules.telemetry.services.telemetry_service import TelemetryService  # noqa: E501
-# Uncomment the import above once the service class is implemented.
+from app.database.session import get_db
+from app.modules.devices.models.device import Device
+from app.modules.devices.security.device_authenticator import (
+    DeviceAuthenticator,
+)
 
 
-def get_telemetry_service():  # type: ignore[return]
+def get_authenticated_device(
+    x_device_key: str | None = Header(
+        default=None,
+        alias="X-Device-Key",
+    ),
+    db: Session = Depends(get_db),
+) -> Device:
     """
-    Provide a ``TelemetryService`` instance.
-    Uncomment the body once the service class is implemented.
+    Authenticate a physical IoT device using its device credential.
+
+    The API key is expected in:
+
+        X-Device-Key: liot_dvc_<key-id>.<secret>
     """
-    # return TelemetryService()
-    raise NotImplementedError("TelemetryService is not yet implemented.")
+
+    if not x_device_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Device credentials required.",
+            headers={
+                "WWW-Authenticate": "DeviceKey",
+            },
+        )
+
+    authenticator = DeviceAuthenticator()
+
+    return authenticator.authenticate(
+        db,
+        x_device_key,
+    )

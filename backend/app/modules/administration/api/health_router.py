@@ -56,26 +56,37 @@ def check_database() -> DatabaseStats:
     except Exception:
         return DatabaseStats(db_size_mb=0, tables={})
 
+import shutil
+from app.database.redis import get_redis_client
+
+
 @router.get("/system-health", response_model=SystemHealthResponse, dependencies=admin_dep, summary="22.6 System Health")
 def get_system_health():
     # CPU, RAM, Disk
+    usage = shutil.disk_usage("/")
+    disk_percent = round((usage.used / usage.total) * 100, 2)
+
     metrics = SystemMetrics(
         cpu_percent=psutil.cpu_percent(interval=0.1),
         ram_percent=psutil.virtual_memory().percent,
-        disk_percent=psutil.disk_usage('/').percent
+        disk_percent=disk_percent,
     )
     
     db_stats = check_database()
     cache_stats = check_redis()
     
-    # Mocking services
+    from app.core.readiness import check_influx, check_mqtt
+    influx_ok, _ = check_influx()
+    mqtt_ok, _ = check_mqtt()
+    email_configured = settings.notification_provider == "smtp"
+
     services = [
         ServiceStatus(name="FastAPI", status="Green", details="Running"),
         ServiceStatus(name="MySQL", status="Green" if db_stats.tables else "Red", details=f"Size: {db_stats.db_size_mb:.2f} MB"),
         ServiceStatus(name="Redis", status="Green" if cache_stats.status == "Online" else "Red", details=f"Mem: {cache_stats.memory_used_mb:.2f} MB"),
-        ServiceStatus(name="InfluxDB", status="Yellow", details="Simulated - Not fully implemented"),
-        ServiceStatus(name="MQTT", status="Green", details="Simulated"),
-        ServiceStatus(name="Email", status="Green", details="Simulated Mock")
+        ServiceStatus(name="InfluxDB", status="Green" if influx_ok else "Red", details="Time-Series Engine" if influx_ok else "Unavailable"),
+        ServiceStatus(name="MQTT", status="Green" if mqtt_ok else "Red", details="Mosquitto Broker" if mqtt_ok else "Broker Disconnected"),
+        ServiceStatus(name="Email", status="Green" if email_configured else "Yellow", details="Configured Notification Gateway" if email_configured else "Unconfigured / Console Provider"),
     ]
     
     return SystemHealthResponse(
@@ -87,16 +98,32 @@ def get_system_health():
 
 @router.get("/background-jobs", response_model=list[BackgroundJobStatus], dependencies=admin_dep, summary="22.5 Background Jobs")
 def get_background_jobs():
-    # Since background workers are run in main.py via threads, we can mock their status here
-    # In a real app we'd have a global registry or check thread availability
-    return [
-        BackgroundJobStatus(name="Telemetry Worker", status="Running"),
-        BackgroundJobStatus(name="MQTT Listener", status="Running"),
-        BackgroundJobStatus(name="Notification Worker", status="Running"),
+    workers = [
+        ("Telemetry Worker", "telemetry-worker"),
+        ("MQTT Listener", "mqtt-worker"),
+        ("Notification Worker", "notification-worker"),
+        ("Command Worker", "command-worker"),
+    ]
+
+    statuses = []
+    try:
+        r = get_redis_client()
+        for label, name in workers:
+            exists = bool(r.exists(f"localiot:worker:{name}:heartbeat"))
+            status = "Running" if exists else "Stopped"
+            statuses.append(BackgroundJobStatus(name=label, status=status))
+    except Exception:
+        for label, _ in workers:
+            statuses.append(BackgroundJobStatus(name=label, status="Stopped"))
+
+    # Auxiliary jobs
+    statuses.extend([
         BackgroundJobStatus(name="Analytics Worker", status="Idle"),
         BackgroundJobStatus(name="Reports Worker", status="Idle"),
         BackgroundJobStatus(name="Backup Worker", status="Idle"),
-    ]
+    ])
+
+    return statuses
 
 @router.post("/cache-flush", dependencies=admin_dep, summary="22.8 Cache Manager (Flush)")
 def flush_cache():

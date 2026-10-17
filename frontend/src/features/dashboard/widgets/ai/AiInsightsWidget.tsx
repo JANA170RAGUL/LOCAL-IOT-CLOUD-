@@ -6,12 +6,8 @@ import type { WidgetConfig } from '../../types';
 import type { WidgetManifest } from '../../registry/types';
 
 export const AiInsightsWidget: React.FC<{ config: WidgetConfig }> = ({ config }) => {
-  const insights = (config as any).mockInsights ?? [
-    "5 new alerts generated in the last hour.",
-    "Overall energy consumption increased by 9%.",
-    "Pump 3 efficiency decreased due to suspected wear.",
-    "Gateway-Alpha was offline for 12 minutes."
-  ];
+  const insights: string[] = (config as any).insights || [];
+  const hasData = insights.length > 0;
 
   return (
     <Box sx={{ height: '100%', p: 2, display: 'flex', flexDirection: 'column', bgcolor: 'background.paper', overflowY: 'auto' }}>
@@ -20,22 +16,30 @@ export const AiInsightsWidget: React.FC<{ config: WidgetConfig }> = ({ config })
         {config.title || "Today's Summary"}
       </Typography>
 
-      <List dense disablePadding>
-        {insights.map((insight: string, idx: number) => (
-          <ListItem key={idx} alignItems="flex-start" sx={{ px: 0 }}>
-            <ListItemIcon sx={{ minWidth: 24, mt: 0.5 }}>
-              <FiberManualRecordIcon sx={{ fontSize: 8, color: 'primary.main' }} />
-            </ListItemIcon>
-            <ListItemText 
-              primary={
-                <Typography variant="body2" color="text.secondary">
-                  {insight}
-                </Typography>
-              } 
-            />
-          </ListItem>
-        ))}
-      </List>
+      {!hasData ? (
+        <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#f8f9fa', p: 2, borderRadius: 1 }}>
+          <Typography variant="body2" color="text.secondary" align="center">
+            No platform insights generated.
+          </Typography>
+        </Box>
+      ) : (
+        <List dense disablePadding>
+          {insights.map((insight: string, idx: number) => (
+            <ListItem key={idx} alignItems="flex-start" sx={{ px: 0 }}>
+              <ListItemIcon sx={{ minWidth: 24, mt: 0.5 }}>
+                <FiberManualRecordIcon sx={{ fontSize: 8, color: 'primary.main' }} />
+              </ListItemIcon>
+              <ListItemText 
+                primary={
+                  <Typography variant="body2" color="text.secondary">
+                    {insight}
+                  </Typography>
+                } 
+              />
+            </ListItem>
+          ))}
+        </List>
+      )}
     </Box>
   );
 };

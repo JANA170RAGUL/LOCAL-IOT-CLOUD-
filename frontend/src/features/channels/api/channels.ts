@@ -11,8 +11,25 @@ export interface ChannelField {
 
 export interface ChannelApiKey {
   id: string;
-  key_type: 'read' | 'write';
-  api_key: string;
+  key_id: string;
+  key_type: 'READ' | 'WRITE' | 'read' | 'write';
+  name: string;
+  raw_key?: string;
+  api_key_masked?: string;
+  api_key?: string;
+  expires_at?: string | null;
+  last_used_at?: string | null;
+  revoked_at?: string | null;
+  created_at: string;
+}
+
+export interface ChannelApiKeyCreated {
+  id: string;
+  key_id: string;
+  key_type: string;
+  name: string;
+  raw_key: string;
+  expires_at?: string | null;
   created_at: string;
 }
 
@@ -87,6 +104,7 @@ export interface ChannelWebhook {
   max_retries: number;
   timeout_seconds: number;
   trigger_events: string[];
+  has_secret?: boolean;
 }
 
 export interface WebhookLog {
@@ -156,7 +174,18 @@ export const channelsApi = {
     });
     return response.data;
   },
-  regenerateApiKey: async (id: string, keyType: 'read' | 'write'): Promise<Channel> => {
+  createApiKey: async (channelId: string, data: { key_type: 'READ' | 'WRITE', name?: string, expires_in_days?: number }): Promise<ChannelApiKeyCreated> => {
+    const response = await axios.post(`/channels/${channelId}/api-keys`, data);
+    return response.data;
+  },
+  rotateApiKey: async (channelId: string, keyId: string, expires_in_days?: number): Promise<ChannelApiKeyCreated> => {
+    const response = await axios.post(`/channels/${channelId}/api-keys/${keyId}/rotate`, { expires_in_days });
+    return response.data;
+  },
+  revokeApiKey: async (channelId: string, keyId: string): Promise<void> => {
+    await axios.delete(`/channels/${channelId}/api-keys/${keyId}`);
+  },
+  regenerateApiKey: async (id: string, keyType: 'read' | 'write'): Promise<ChannelApiKeyCreated> => {
     const response = await axios.post(`/channels/${id}/api-keys/${keyType}/regenerate`);
     return response.data;
   },

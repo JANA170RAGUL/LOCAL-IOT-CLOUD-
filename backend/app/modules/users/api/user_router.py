@@ -60,8 +60,7 @@ def list_users(
         page=page,
         page_size=page_size
     )
-    tenant_id = get_tenant_scope(current_user)
-    return svc.list(db, filters, tenant_id)
+    return svc.list(db, filters, current_user=current_user)
 
 @router.post(
     "/",
@@ -76,8 +75,7 @@ def create_user(
     svc: UserService = Depends(get_user_service),
     current_user: User = Depends(get_current_user)
 ) -> User:
-    tenant_id = get_tenant_scope(current_user)
-    return svc.create(db, payload, tenant_id)
+    return svc.create(db, payload, current_user=current_user)
 
 @router.get(
     "/me",
@@ -101,8 +99,7 @@ def get_user(
     svc: UserService = Depends(get_user_service),
     current_user: User = Depends(get_current_user)
 ) -> User:
-    tenant_id = get_tenant_scope(current_user)
-    return svc.get_by_id(db, user_id, tenant_id)
+    return svc.get_by_id(db, user_id, current_user=current_user)
 
 @router.patch(
     "/{user_id}",
@@ -117,8 +114,7 @@ def update_user(
     svc: UserService = Depends(get_user_service),
     current_user: User = Depends(get_current_user)
 ) -> User:
-    tenant_id = get_tenant_scope(current_user)
-    return svc.update(db, user_id, payload, tenant_id)
+    return svc.update(db, user_id, payload, current_user=current_user)
 
 @router.delete(
     "/{user_id}",
@@ -131,8 +127,7 @@ def delete_user(
     svc: UserService = Depends(get_user_service),
     current_user: User = Depends(get_current_user)
 ) -> dict:
-    tenant_id = get_tenant_scope(current_user)
-    return svc.delete(db, user_id, tenant_id)
+    return svc.delete(db, user_id, current_user=current_user)
 
 @router.post(
     "/{user_id}/reset-password",
@@ -146,8 +141,7 @@ def reset_password(
     svc: UserService = Depends(get_user_service),
     current_user: User = Depends(get_current_user)
 ) -> dict:
-    tenant_id = get_tenant_scope(current_user)
-    return svc.reset_password(db, user_id, payload, tenant_id)
+    return svc.reset_password(db, user_id, payload, current_user=current_user)
 
 @router.post(
     "/change-password",

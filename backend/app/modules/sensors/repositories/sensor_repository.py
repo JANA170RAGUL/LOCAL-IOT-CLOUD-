@@ -18,16 +18,17 @@ class SensorRepository(BaseRepository[Sensor]):
     def __init__(self):
         super().__init__(Sensor)
 
-    def get_by_id(self, db: Session, obj_id: str) -> Sensor | None:
-        """Fetch a sensor by UUID primary key or by code."""
-        stmt = select(Sensor).where(
-            or_(
-                Sensor.id == obj_id,
-                Sensor.code == obj_id,
-                Sensor.code.ilike(obj_id),
-            )
-        )
-        return db.scalar(stmt)
+    def get_by_id(
+        self,
+        db: Session,
+        obj_id: str,
+    ) -> Sensor | None:
+        """
+        Primary-key lookup only.
+
+        Sensor codes are scoped to a device.
+        """
+        return db.get(Sensor, obj_id)
 
     # ── Single-row lookups ────────────────────────────────────────────────────
 
@@ -68,7 +69,7 @@ class SensorRepository(BaseRepository[Sensor]):
                 Sensor.code == code,
             )
         )
-        return db.scalar(stmt) > 0
+        return (db.scalar(stmt) or 0) > 0
 
     # ── Filtered + paginated list ─────────────────────────────────────────────
 
@@ -110,7 +111,7 @@ class SensorRepository(BaseRepository[Sensor]):
 
         # Count before pagination
         count_stmt = select(func.count()).select_from(stmt.subquery())
-        total: int = db.scalar(count_stmt)
+        total: int = db.scalar(count_stmt) or 0
 
         stmt = (
             stmt

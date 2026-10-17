@@ -20,64 +20,67 @@ const DRAWER_WIDTH = 320;
 const sidebarGlobalStyles = (
   <GlobalStyles
     styles={{
-      '@keyframes sidebarMesh': {
-        '0%': { backgroundPosition: '0% 0%' },
-        '50%': { backgroundPosition: '100% 100%' },
-        '100%': { backgroundPosition: '0% 0%' },
+      '@keyframes pulseGlow': {
+        '0%': { opacity: 0.4, transform: 'scale(1)' },
+        '50%': { opacity: 0.9, transform: 'scale(1.05)' },
+        '100%': { opacity: 0.4, transform: 'scale(1)' },
       },
-      '@keyframes pulseData': {
-        '0%': { opacity: 0.4 },
-        '50%': { opacity: 1 },
-        '100%': { opacity: 0.4 },
-      },
-      '.sidebar-bg': {
-        background: 'linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
-        backgroundSize: '300% 300%',
-        animation: 'sidebarMesh 20s ease infinite',
+      '.glass-sidebar': {
+        background: 'linear-gradient(165deg, rgba(15, 23, 42, 0.96) 0%, rgba(30, 41, 59, 0.94) 100%) !important',
+        backdropFilter: 'blur(24px) saturate(180%) !important',
+        WebkitBackdropFilter: 'blur(24px) saturate(180%) !important',
+        borderRight: '1px solid rgba(255, 255, 255, 0.15) !important',
         position: 'relative',
         overflow: 'hidden',
+        color: '#ffffff !important',
       },
-      '.nav-item': {
-        borderRadius: '12px',
-        margin: '4px 16px',
-        minHeight: '52px',
-        padding: '8px 16px',
-        backdropFilter: 'blur(10px)',
-        border: '1px solid transparent',
-        transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-        color: 'rgba(255, 255, 255, 0.95)',
+      '.glass-nav-item': {
+        borderRadius: '14px !important',
+        margin: '4px 14px !important',
+        minHeight: '46px !important',
+        padding: '8px 14px !important',
+        background: 'rgba(255, 255, 255, 0.06) !important',
+        backdropFilter: 'blur(12px) !important',
+        border: '1px solid rgba(255, 255, 255, 0.1) !important',
+        transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important',
+        color: '#ffffff !important',
       },
-      '.nav-item:hover': {
-        background: 'rgba(255, 255, 255, 0.1)',
-        transform: 'translateX(4px)',
-        color: '#ffffff',
-        border: '1px solid rgba(255, 255, 255, 0.15)',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+      '.glass-nav-item:hover': {
+        background: 'rgba(255, 255, 255, 0.14) !important',
+        transform: 'translateX(4px) !important',
+        border: '1px solid rgba(255, 255, 255, 0.25) !important',
+        boxShadow: '0 4px 15px rgba(0, 0, 0, 0.3) !important',
+        color: '#ffffff !important',
       },
-      '.nav-item.active': {
-        background: 'linear-gradient(90deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%)',
-        color: '#ffffff',
-        border: '1px solid rgba(255, 255, 255, 0.2)',
-        boxShadow: 'inset 4px 0 0 0 #ffffff, 0 6px 16px rgba(0,0,0,0.15)',
+      '.glass-nav-item.active': {
+        background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.65) 0%, rgba(59, 130, 246, 0.45) 100%) !important',
+        color: '#ffffff !important',
+        border: '1px solid rgba(147, 197, 253, 0.6) !important',
+        boxShadow: '0 4px 20px rgba(37, 99, 235, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.5) !important',
       },
-      '.nav-icon': {
-        color: 'inherit',
-        minWidth: '40px',
+      '.glass-nav-icon': {
+        color: '#93c5fd !important',
+        minWidth: '36px',
         transition: 'all 0.25s ease',
       },
-      '.nav-item.active .nav-icon': {
-        color: '#ffffff',
-        filter: 'drop-shadow(0 0 8px rgba(255, 255, 255, 0.6))',
+      '.glass-nav-item:hover .glass-nav-icon': {
+        color: '#60a5fa !important',
+        transform: 'scale(1.1)',
+      },
+      '.glass-nav-item.active .glass-nav-icon': {
+        color: '#ffffff !important',
+        filter: 'drop-shadow(0 0 8px rgba(147, 197, 253, 0.8))',
       },
       '.glass-divider': {
-        margin: '12px 20px',
-        borderColor: 'rgba(255, 255, 255, 0.15)',
+        borderColor: 'rgba(255, 255, 255, 0.18) !important',
+        margin: '12px 18px !important',
       },
-      '.sidebar-scroll': {
-        '&::-webkit-scrollbar': { width: '5px' },
-        '&::-webkit-scrollbar-thumb': { background: 'rgba(255,255,255,0.2)', borderRadius: '5px' },
-        '&::-webkit-scrollbar-thumb:hover': { background: 'rgba(255,255,255,0.3)' }
-      }
+      '.sidebar-scroll-area': {
+        '&::-webkit-scrollbar': { width: '6px' },
+        '&::-webkit-scrollbar-track': { background: 'rgba(0, 0, 0, 0.1)' },
+        '&::-webkit-scrollbar-thumb': { background: 'rgba(255, 255, 255, 0.2)', borderRadius: '6px' },
+        '&::-webkit-scrollbar-thumb:hover': { background: 'rgba(255, 255, 255, 0.35)' },
+      },
     }}
   />
 );
@@ -101,11 +104,11 @@ export const Sidebar: React.FC = () => {
     monitoring: true,
     infrastructure: true,
     aiServices: false,
-    administration: false
+    administration: false,
   });
 
   const handleToggle = (id: string) => {
-    setOpenGroups(prev => ({ ...prev, [id]: !prev[id] }));
+    setOpenGroups((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   const navGroups: NavGroup[] = [
@@ -120,7 +123,7 @@ export const Sidebar: React.FC = () => {
         { text: 'Alerts', path: '/alerts', icon: <NotificationsActive /> },
         { text: 'Rule Builder', path: '/rules', icon: <Tune /> },
         { text: 'Reports', path: '/reports', icon: <Assessment /> },
-      ]
+      ],
     },
     {
       id: 'infrastructure',
@@ -133,7 +136,7 @@ export const Sidebar: React.FC = () => {
         { text: 'Gateways', path: '/gateways', icon: <Router /> },
         { text: 'Devices', path: '/devices', icon: <DeveloperBoard /> },
         { text: 'Sensors', path: '/sensors', icon: <Sensors /> },
-      ]
+      ],
     },
     {
       id: 'aiServices',
@@ -143,7 +146,7 @@ export const Sidebar: React.FC = () => {
         { text: 'Models', path: '/ai/models', icon: <Memory /> },
         { text: 'AI Assistant', path: '/ai/assistant', icon: <SmartToy /> },
         { text: 'Vision', path: '/ai/vision', icon: <Visibility /> },
-      ]
+      ],
     },
     {
       id: 'administration',
@@ -152,8 +155,8 @@ export const Sidebar: React.FC = () => {
         { text: 'Users', path: '/users', icon: <Group /> },
         { text: 'Roles', path: '/roles', icon: <Security /> },
         { text: 'Audit Logs', path: '/audit', icon: <ReceiptLong /> },
-      ]
-    }
+      ],
+    },
   ];
 
   return (
@@ -165,110 +168,180 @@ export const Sidebar: React.FC = () => {
         [`& .MuiDrawer-paper`]: {
           width: DRAWER_WIDTH,
           boxSizing: 'border-box',
-          borderRight: '1px solid rgba(255, 255, 255, 0.08)',
-          boxShadow: '4px 0 30px rgba(0,0,0,0.3)',
+          border: 'none',
+          backgroundColor: '#0f172a !important',
+          color: '#ffffff !important',
         },
       }}
     >
       {sidebarGlobalStyles}
-      
-      <Box className="sidebar-bg" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-        
-        {/* Subtle Background Blobs */}
-        <Box sx={{ position: 'absolute', top: '5%', left: '-10%', width: '200px', height: '200px', background: '#ffffff', filter: 'blur(100px)', opacity: 0.15 }} />
-        <Box sx={{ position: 'absolute', bottom: '10%', right: '-10%', width: '200px', height: '200px', background: '#ffcc00', filter: 'blur(100px)', opacity: 0.2 }} />
+
+      <Box className="glass-sidebar" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        {/* Ambient Glowing Blobs for Glass Depth */}
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '-5%',
+            left: '-15%',
+            width: '240px',
+            height: '240px',
+            background: 'radial-gradient(circle, rgba(59, 130, 246, 0.35) 0%, rgba(37, 99, 235, 0) 70%)',
+            filter: 'blur(50px)',
+            pointerEvents: 'none',
+          }}
+        />
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: '15%',
+            right: '-15%',
+            width: '220px',
+            height: '220px',
+            background: 'radial-gradient(circle, rgba(168, 85, 247, 0.3) 0%, rgba(147, 51, 234, 0) 70%)',
+            filter: 'blur(50px)',
+            pointerEvents: 'none',
+          }}
+        />
 
         {/* Content Wrapper */}
         <Box sx={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
           
-          {/* Top Fixed Area: Branding & Status */}
-          <Box sx={{ flexShrink: 0 }}>
-            {/* Logo Section */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, px: 3, pt: 4, pb: 3 }}>
-              <Box sx={{ 
-                background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)',
-                p: 1.5, borderRadius: '14px', border: '1px solid rgba(255,255,255,0.4)',
-                boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
-              }}>
-                <Cloud sx={{ color: '#ffffff', fontSize: 32 }} />
+          {/* Top Fixed Area: Header & Cloud Widget */}
+          <Box sx={{ flexShrink: 0, p: 3, pb: 1.5 }}>
+            
+            {/* Branding Logo Header */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2.5 }}>
+              <Box
+                sx={{
+                  background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.4) 0%, rgba(37, 99, 235, 0.2) 100%)',
+                  backdropFilter: 'blur(12px)',
+                  p: 1.25,
+                  borderRadius: '16px',
+                  border: '1px solid rgba(147, 197, 253, 0.4)',
+                  boxShadow: '0 4px 20px rgba(37, 99, 235, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.4)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Cloud sx={{ color: '#ffffff', fontSize: 28 }} />
               </Box>
-              <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                <Typography sx={{ color: 'white', fontWeight: 800, fontSize: '1.3rem', letterSpacing: '-0.3px', lineHeight: 1.1 }}>
+              <Box>
+                <Typography sx={{ color: '#ffffff', fontWeight: 800, fontSize: '1.25rem', letterSpacing: '-0.2px', lineHeight: 1.1 }}>
                   Local IoT Cloud
                 </Typography>
-                <Typography sx={{ color: 'rgba(255,255,255,0.8)', fontWeight: 600, fontSize: '0.8rem', letterSpacing: '0.5px', textTransform: 'uppercase', mt: 0.5 }}>
-                  Super Admin
+                <Typography sx={{ color: '#94a3b8', fontWeight: 700, fontSize: '0.75rem', letterSpacing: '0.8px', textTransform: 'uppercase', mt: 0.5 }}>
+                  {user?.role || 'Super Admin'}
                 </Typography>
               </Box>
             </Box>
 
-            {/* Enlarged IoT Status Widget */}
-            <Box sx={{ px: 3, mb: 2 }}>
-              <Box sx={{ 
-                background: 'rgba(255, 255, 255, 0.1)', backdropFilter: 'blur(12px)',
-                borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.2)',
-                p: 2, display: 'flex', flexDirection: 'column', gap: 1.2,
-                boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
-              }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography sx={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.9rem', fontWeight: 500 }}>Cloud</Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Circle sx={{ color: '#4ADE80', fontSize: 10, filter: 'drop-shadow(0 0 4px #4ADE80)', animation: 'pulseData 2s infinite' }} />
-                    <Typography sx={{ color: 'white', fontSize: '0.9rem', fontWeight: 600 }}>Connected</Typography>
-                  </Box>
+            {/* IoT Status Glass Widget */}
+            <Box
+              sx={{
+                background: 'rgba(255, 255, 255, 0.05)',
+                backdropFilter: 'blur(16px)',
+                borderRadius: '18px',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                p: 2,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1.2,
+                boxShadow: '0 8px 25px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.2)',
+              }}
+            >
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography sx={{ color: '#cbd5e1', fontSize: '0.85rem', fontWeight: 500 }}>Cloud</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Circle sx={{ color: '#4ade80', fontSize: 8, filter: 'drop-shadow(0 0 6px #4ade80)' }} />
+                  <Typography sx={{ color: '#ffffff', fontSize: '0.85rem', fontWeight: 700 }}>Connected</Typography>
                 </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography sx={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.9rem', fontWeight: 500 }}>MQTT</Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Circle sx={{ color: '#4ADE80', fontSize: 10, filter: 'drop-shadow(0 0 4px #4ADE80)' }} />
-                    <Typography sx={{ color: 'white', fontSize: '0.9rem', fontWeight: 600 }}>Online</Typography>
-                  </Box>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography sx={{ color: '#cbd5e1', fontSize: '0.85rem', fontWeight: 500 }}>MQTT Broker</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Circle sx={{ color: '#4ade80', fontSize: 8, filter: 'drop-shadow(0 0 6px #4ade80)' }} />
+                  <Typography sx={{ color: '#ffffff', fontSize: '0.85rem', fontWeight: 700 }}>Online</Typography>
                 </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography sx={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.9rem', fontWeight: 500 }}>Devices</Typography>
-                  <Typography sx={{ color: 'white', fontSize: '0.9rem', fontWeight: 700 }}>1,256</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography sx={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.9rem', fontWeight: 500 }}>AI Engine</Typography>
-                  <Typography sx={{ color: '#FDBA74', fontSize: '0.9rem', fontWeight: 700 }}>Running</Typography>
-                </Box>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography sx={{ color: '#cbd5e1', fontSize: '0.85rem', fontWeight: 500 }}>Active Devices</Typography>
+                <Typography sx={{ color: '#60a5fa', fontSize: '0.85rem', fontWeight: 800 }}>1,256</Typography>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography sx={{ color: '#cbd5e1', fontSize: '0.85rem', fontWeight: 500 }}>AI Engine</Typography>
+                <Typography sx={{ color: '#fdba74', fontSize: '0.85rem', fontWeight: 800 }}>Running</Typography>
               </Box>
             </Box>
           </Box>
 
-          <Divider sx={{ borderColor: 'rgba(255,255,255,0.15)', mx: 3, mb: 1 }} />
+          {/* High-Contrast Glass Divider Bar */}
+          <Divider className="glass-divider" />
 
-          {/* Scrollable Navigation Area */}
-          <Box className="sidebar-scroll" sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+          {/* Scrollable Navigation List */}
+          <Box className="sidebar-scroll-area" sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', px: 0.5 }}>
             <List disablePadding>
-              {navGroups.map((group) => (
+              {navGroups.map((group, groupIdx) => (
                 <React.Fragment key={group.id}>
-                  <ListItemButton 
+                  {groupIdx > 0 && <Divider className="glass-divider" />}
+                  
+                  {/* Category Header */}
+                  <ListItemButton
                     onClick={() => handleToggle(group.id)}
-                    sx={{ px: 3, py: 1.5, '&:hover': { background: 'transparent' } }}
+                    sx={{
+                      px: 3,
+                      py: 1.2,
+                      '&:hover': { background: 'rgba(255, 255, 255, 0.05)' },
+                      borderRadius: '10px',
+                      mx: 1,
+                    }}
                     disableRipple
                   >
-                    <ListItemText 
+                    <ListItemText
                       primary={
-                        <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                        <Typography
+                          sx={{
+                            fontSize: '0.75rem',
+                            fontWeight: 800,
+                            color: '#94a3b8 !important',
+                            textTransform: 'uppercase',
+                            letterSpacing: '1.2px',
+                            display: 'block',
+                          }}
+                        >
                           {group.title}
                         </Typography>
                       }
                     />
-                    {openGroups[group.id] ? <ExpandLess sx={{ color: 'rgba(255,255,255,0.7)', fontSize: 20 }} /> : <ExpandMore sx={{ color: 'rgba(255,255,255,0.7)', fontSize: 20 }} />}
+                    {openGroups[group.id] ? (
+                      <ExpandLess sx={{ color: '#94a3b8', fontSize: 18 }} />
+                    ) : (
+                      <ExpandMore sx={{ color: '#94a3b8', fontSize: 18 }} />
+                    )}
                   </ListItemButton>
-                  
-                  <Collapse in={openGroups[group.id]} timeout={250} unmountOnExit>
-                    <List component="div" disablePadding sx={{ pb: 1.5 }}>
+
+                  <Collapse in={openGroups[group.id]} timeout={200} unmountOnExit>
+                    <List component="div" disablePadding sx={{ pb: 1 }}>
                       {group.items.map((item) => (
                         <ListItem key={item.text} disablePadding>
-                          <ListItemButton component={NavLink} to={item.path} className="nav-item">
-                            <ListItemIcon className="nav-icon">
+                          <ListItemButton
+                            component={NavLink}
+                            to={item.path}
+                            className="glass-nav-item"
+                          >
+                            <ListItemIcon className="glass-nav-icon">
                               {item.icon}
                             </ListItemIcon>
                             <ListItemText
                               primary={
-                                <Typography sx={{ fontSize: '1rem', fontWeight: 600, fontFamily: "'Inter', 'Poppins', sans-serif", color: 'inherit' }}>
+                                <Typography
+                                  sx={{
+                                    fontSize: '0.925rem',
+                                    fontWeight: 600,
+                                    color: '#ffffff !important',
+                                    lineHeight: 1.2,
+                                  }}
+                                >
                                   {item.text}
                                 </Typography>
                               }
@@ -283,55 +356,54 @@ export const Sidebar: React.FC = () => {
             </List>
           </Box>
 
-          {/* Fixed Bottom Footer */}
-          <Box sx={{ 
-            flexShrink: 0,
-            p: 2, 
-            background: 'rgba(255,255,255,0.08)', 
-            backdropFilter: 'blur(15px)',
-            borderTop: '1px solid rgba(255,255,255,0.15)' 
-          }}>
+          {/* High-Contrast Bottom Divider */}
+          <Divider className="glass-divider" />
+
+          {/* Fixed Footer: Quick Settings & Logout */}
+          <Box
+            sx={{
+              flexShrink: 0,
+              p: 2,
+              background: 'rgba(15, 23, 42, 0.6)',
+              backdropFilter: 'blur(16px)',
+              borderTop: '1px solid rgba(255, 255, 255, 0.12)',
+            }}
+          >
             <List disablePadding>
               <ListItem disablePadding>
-                <ListItemButton component={NavLink} to="/settings" className="nav-item" sx={{ minHeight: '44px', padding: '6px 16px' }}>
-                  <ListItemIcon className="nav-icon"><Settings sx={{ fontSize: 22 }} /></ListItemIcon>
-                  <ListItemText primary={<Typography sx={{ fontSize: '0.95rem', fontWeight: 600, color: 'inherit' }}>Settings</Typography>} />
+                <ListItemButton component={NavLink} to="/settings" className="glass-nav-item" sx={{ minHeight: '40px', py: 0.8 }}>
+                  <ListItemIcon className="glass-nav-icon"><Settings sx={{ fontSize: 20 }} /></ListItemIcon>
+                  <ListItemText primary={<Typography sx={{ fontSize: '0.9rem', fontWeight: 600, color: '#ffffff !important' }}>Settings</Typography>} />
                 </ListItemButton>
               </ListItem>
               <ListItem disablePadding>
-                <ListItemButton component={NavLink} to="/profile" className="nav-item" sx={{ minHeight: '44px', padding: '6px 16px' }}>
-                  <ListItemIcon className="nav-icon"><Person sx={{ fontSize: 22 }} /></ListItemIcon>
-                  <ListItemText primary={<Typography sx={{ fontSize: '0.95rem', fontWeight: 600, color: 'inherit' }}>Profile</Typography>} />
+                <ListItemButton component={NavLink} to="/profile" className="glass-nav-item" sx={{ minHeight: '40px', py: 0.8 }}>
+                  <ListItemIcon className="glass-nav-icon"><Person sx={{ fontSize: 20 }} /></ListItemIcon>
+                  <ListItemText primary={<Typography sx={{ fontSize: '0.9rem', fontWeight: 600, color: '#ffffff !important' }}>Profile</Typography>} />
                 </ListItemButton>
               </ListItem>
               <ListItem disablePadding>
-                <ListItemButton component={NavLink} to="/alerts" className="nav-item" sx={{ minHeight: '44px', padding: '6px 16px' }}>
-                  <ListItemIcon className="nav-icon"><Notifications sx={{ fontSize: 22 }} /></ListItemIcon>
-                  <ListItemText primary={<Typography sx={{ fontSize: '0.95rem', fontWeight: 600, color: 'inherit' }}>Notifications</Typography>} />
-                </ListItemButton>
-              </ListItem>
-              <ListItem disablePadding>
-                <ListItemButton component={NavLink} to="/help" className="nav-item" sx={{ minHeight: '44px', padding: '6px 16px' }}>
-                  <ListItemIcon className="nav-icon"><Help sx={{ fontSize: 22 }} /></ListItemIcon>
-                  <ListItemText primary={<Typography sx={{ fontSize: '0.95rem', fontWeight: 600, color: 'inherit' }}>Help</Typography>} />
-                </ListItemButton>
-              </ListItem>
-              <ListItem disablePadding>
-                <ListItemButton 
-                  className="nav-item" 
-                  sx={{ 
-                    minHeight: '44px', padding: '6px 16px', mt: 1,
-                    color: '#ffffff', background: 'rgba(255, 59, 48, 0.8)',
-                    boxShadow: '0 4px 12px rgba(255,59,48,0.3)',
-                    '&:hover': { background: 'rgba(255, 59, 48, 1)', color: '#ffffff', transform: 'translateY(-2px)', boxShadow: '0 6px 16px rgba(255,59,48,0.4)' } 
+                <ListItemButton
+                  className="glass-nav-item"
+                  sx={{
+                    minHeight: '42px',
+                    py: 0.8,
+                    mt: 1,
+                    background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.8) 0%, rgba(220, 38, 38, 0.9) 100%) !important',
+                    border: '1px solid rgba(252, 165, 165, 0.4) !important',
+                    boxShadow: '0 4px 15px rgba(220, 38, 38, 0.35) !important',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, rgba(220, 38, 38, 0.95) 0%, rgba(185, 28, 28, 1) 100%) !important',
+                      transform: 'translateY(-1px) !important',
+                    },
                   }}
                   onClick={() => {
                     useAuthStore.getState().logout();
                     navigate('/login');
                   }}
                 >
-                  <ListItemIcon className="nav-icon" sx={{ color: 'inherit' }}><ExitToApp sx={{ fontSize: 22 }} /></ListItemIcon>
-                  <ListItemText primary={<Typography sx={{ fontSize: '0.95rem', fontWeight: 700, color: 'inherit' }}>Logout</Typography>} />
+                  <ListItemIcon className="glass-nav-icon" sx={{ color: '#ffffff !important' }}><ExitToApp sx={{ fontSize: 20 }} /></ListItemIcon>
+                  <ListItemText primary={<Typography sx={{ fontSize: '0.9rem', fontWeight: 800, color: '#ffffff !important' }}>Logout</Typography>} />
                 </ListItemButton>
               </ListItem>
             </List>

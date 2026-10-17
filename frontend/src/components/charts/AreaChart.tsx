@@ -30,6 +30,7 @@ export const AreaChart: React.FC<AreaChartProps> = ({
     title: title ? { text: title, left: 'center' } : undefined,
     tooltip: {
       trigger: 'axis',
+      confine: true,
       valueFormatter: (value: any) => `${value} ${unit}`,
     },
     xAxis: {

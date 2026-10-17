@@ -1,168 +1,36 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { 
-  Box, Button, TextField, Typography, Alert, InputAdornment, 
-  CircularProgress, Checkbox, FormControlLabel, Link,
-  useTheme, useMediaQuery, GlobalStyles, Divider, IconButton
-} from '@mui/material';
-import { 
-  Email, Lock, Cloud, Sensors, Storage, ViewQuilt, Security, Sync,
-  ShowChart, Timeline, Speed, Public, Memory, SettingsInputAntenna,
-  Google, GitHub, Microsoft
-} from '@mui/icons-material';
+import {
+  Cloud,
+  Lock,
+  Eye,
+  EyeOff,
+  Mail,
+  ArrowRight
+} from 'lucide-react';
 import { login, getMe } from '../features/auth/api/auth';
 import { useAuthStore } from '../features/auth/store/useAuthStore';
 
-const globalStyles = (
-  <GlobalStyles
-    styles={{
-      '@keyframes meshAnimation': {
-        '0%': { backgroundPosition: '0% 50%' },
-        '50%': { backgroundPosition: '100% 50%' },
-        '100%': { backgroundPosition: '0% 50%' },
-      },
-      '@keyframes float': {
-        '0%': { transform: 'translateY(0px)' },
-        '50%': { transform: 'translateY(-15px)' },
-        '100%': { transform: 'translateY(0px)' },
-      },
-      '@keyframes pulseData': {
-        '0%': { opacity: 0.3 },
-        '50%': { opacity: 1 },
-        '100%': { opacity: 0.3 },
-      },
-      '.mesh-bg': {
-        background: 'linear-gradient(120deg, #38BDF8, #8B5CF6, #EC4899, #FDBA74)',
-        backgroundSize: '300% 300%',
-        animation: 'meshAnimation 18s ease infinite',
-      },
-      '.glass-panel': {
-        backdropFilter: 'blur(30px)',
-        background: 'rgba(255, 255, 255, 0.15)',
-        border: '1px solid rgba(255, 255, 255, 0.4)',
-        boxShadow: '0 30px 60px rgba(0,0,0,0.1)',
-        borderRadius: '28px',
-      },
-      '.glass-card': {
-        backdropFilter: 'blur(20px)',
-        background: 'rgba(255, 255, 255, 0.1)',
-        border: '1px solid rgba(255, 255, 255, 0.3)',
-        borderRadius: '16px',
-        transition: 'all 0.3s ease',
-      },
-      '.glass-input .MuiOutlinedInput-root': {
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        backdropFilter: 'blur(10px)',
-        borderRadius: '16px',
-        transition: 'all 0.3s ease',
-        color: '#1e293b',
-        fontWeight: 500,
-        '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.5)', borderWidth: '1px' },
-        '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.8)' },
-        '&.Mui-focused fieldset': { borderColor: '#8B5CF6', borderWidth: '2px' },
-        '&.Mui-focused': {
-           backgroundColor: 'rgba(255, 255, 255, 0.4)',
-           boxShadow: '0 0 0 4px rgba(139, 92, 246, 0.2)'
-        }
-      },
-      '.glass-input input::placeholder': { color: 'rgba(0,0,0,0.4)', opacity: 1 },
-      '.glass-input .MuiSvgIcon-root': { color: 'rgba(0, 0, 0, 0.5)' }
-    }}
-  />
-);
-
-const MockDashboard = () => (
-  <Box sx={{ 
-    flex: 1, 
-    ml: 4, 
-    display: { xs: 'none', lg: 'flex' }, 
-    flexDirection: 'column', 
-    gap: 2,
-    p: 3,
-    borderRadius: '24px',
-    background: 'rgba(255,255,255,0.05)',
-    backdropFilter: 'blur(10px)',
-    border: '1px solid rgba(255,255,255,0.2)',
-    boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-    position: 'relative',
-    overflow: 'hidden'
-  }}>
-    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-      <Typography sx={{ fontWeight: 600, color: 'white', fontSize: '1.1rem' }}>System Overview</Typography>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2, py: 0.5, borderRadius: '20px', background: 'rgba(255,255,255,0.15)' }}>
-        <Box sx={{ width: 8, height: 8, borderRadius: '50%', background: '#4ADE80', animation: 'pulseData 2s infinite' }} />
-        <Typography sx={{ fontSize: '0.8rem', color: 'white', fontWeight: 500 }}>All Systems Online</Typography>
-      </Box>
-    </Box>
-
-    <Box sx={{ display: 'flex', gap: 2 }}>
-      <Box className="glass-card" sx={{ flex: 1, p: 2 }}>
-        <Typography sx={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', mb: 1 }}>Connected Devices</Typography>
-        <Typography sx={{ fontSize: '1.8rem', fontWeight: 700, color: 'white' }}>128</Typography>
-        <Typography sx={{ fontSize: '0.75rem', color: '#4ADE80' }}>+12 this week</Typography>
-      </Box>
-      <Box className="glass-card" sx={{ flex: 1, p: 2 }}>
-        <Typography sx={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', mb: 1 }}>Data Points</Typography>
-        <Typography sx={{ fontSize: '1.8rem', fontWeight: 700, color: 'white' }}>8.45K</Typography>
-        <Typography sx={{ fontSize: '0.75rem', color: '#4ADE80' }}>+15.2%</Typography>
-      </Box>
-    </Box>
-
-    <Box className="glass-card" sx={{ p: 2, flex: 1, display: 'flex', flexDirection: 'column' }}>
-      <Typography sx={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', mb: 2 }}>Sensor Analytics</Typography>
-      {/* Mock Chart Area */}
-      <Box sx={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'flex-end', gap: 1, height: '100px' }}>
-        {[40, 60, 30, 80, 50, 90, 70, 45, 85, 60, 95].map((h, i) => (
-          <Box key={i} sx={{ flex: 1, height: `${h}%`, background: 'rgba(255,255,255,0.3)', borderRadius: '4px', position: 'relative' }}>
-            <Box sx={{ position: 'absolute', top: -4, left: '50%', transform: 'translateX(-50%)', width: 6, height: 6, borderRadius: '50%', background: '#38BDF8' }} />
-          </Box>
-        ))}
-        {/* Mock line SVG */}
-        <svg style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', overflow: 'visible' }}>
-          <path d="M 0,60 Q 20,40 40,70 T 80,20 T 120,50 T 160,10 T 200,30 T 240,55 T 280,15 T 320,40 T 360,5" fill="none" stroke="#F472B6" strokeWidth="2" />
-        </svg>
-      </Box>
-    </Box>
-
-    <Box sx={{ display: 'flex', gap: 2 }}>
-      <Box className="glass-card" sx={{ flex: 1, p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <Public sx={{ color: 'rgba(255,255,255,0.6)', fontSize: 40 }} />
-        <Box>
-          <Typography sx={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)' }}>Global Nodes</Typography>
-          <Typography sx={{ fontSize: '1.2rem', fontWeight: 700, color: 'white' }}>Active</Typography>
-        </Box>
-      </Box>
-      <Box className="glass-card" sx={{ flex: 1, p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <Speed sx={{ color: 'rgba(255,255,255,0.6)', fontSize: 40 }} />
-        <Box>
-          <Typography sx={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)' }}>Avg Latency</Typography>
-          <Typography sx={{ fontSize: '1.2rem', fontWeight: 700, color: 'white' }}>12ms</Typography>
-        </Box>
-      </Box>
-    </Box>
-  </Box>
-);
-
-const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+export const Login: React.FC = () => {
+  const [email, setEmail] = useState('admin@localiot.com');
+  const [password, setPassword] = useState('Password@123');
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
-  
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     try {
-      const { access_token } = await login({ email, password });
-      useAuthStore.setState({ token: access_token });
+      const { access_token, refresh_token } = await login({ email, password });
+      useAuthStore.setState({ token: access_token, refreshToken: refresh_token });
       const user = await getMe();
-      setAuth(access_token, user);
+      setAuth(access_token, refresh_token, user);
       navigate('/');
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Login failed. Please check your credentials.');
@@ -170,242 +38,215 @@ const Login = () => {
     }
   };
 
-  const features = [
-    { title: 'Real-Time Monitoring', subtitle: 'Live data from your IoT devices.', icon: <Sensors /> },
-    { title: 'Local Cloud Computing', subtitle: 'Run your cloud locally offline.', icon: <Storage /> },
-    { title: 'Multi-Tenant Architecture', subtitle: 'Isolated workspaces & teams.', icon: <ViewQuilt /> },
-    { title: 'Secure Authentication', subtitle: 'Enterprise-grade security.', icon: <Security /> },
-    { title: 'Offline Data Sync', subtitle: 'Store locally, sync when back.', icon: <Sync /> }
-  ];
-
   return (
-    <Box className="mesh-bg" sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', p: { xs: 2, md: 4 }, fontFamily: "'Inter', 'Poppins', sans-serif", position: 'relative', overflow: 'hidden' }}>
-      {globalStyles}
-      
-      {/* Ambient Floating Orbs */}
-      <Box sx={{ position: 'absolute', top: '10%', left: '20%', width: '300px', height: '300px', background: '#F472B6', filter: 'blur(100px)', opacity: 0.6, animation: 'float 8s ease-in-out infinite alternate', borderRadius: '50%' }} />
-      <Box sx={{ position: 'absolute', bottom: '15%', right: '15%', width: '400px', height: '400px', background: '#38BDF8', filter: 'blur(120px)', opacity: 0.6, animation: 'float 12s ease-in-out infinite alternate-reverse', borderRadius: '50%' }} />
-      <Box sx={{ position: 'absolute', top: '40%', left: '50%', width: '250px', height: '250px', background: '#8B5CF6', filter: 'blur(90px)', opacity: 0.5, animation: 'float 10s ease-in-out infinite alternate', borderRadius: '50%' }} />
+    <div className="relative min-h-screen w-full overflow-y-auto overflow-x-hidden bg-slate-950 font-sans text-slate-100 flex flex-col justify-between p-4 sm:p-6 md:p-8">
+      {/* Bright Matte Finish High-Resolution Background Image */}
+      <div 
+        className="absolute inset-0 pointer-events-none z-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: `linear-gradient(to bottom, rgba(15, 23, 42, 0.15), rgba(15, 23, 42, 0.30)), url('/landing_bg.jpg')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          imageRendering: 'crisp-edges',
+          filter: 'brightness(1.15) contrast(0.98)',
+        }}
+      />
 
-      {/* Grid Overlay for Texture */}
-      <Box sx={{
-        position: 'absolute', inset: 0, opacity: 0.15,
-        backgroundImage: `
-          linear-gradient(rgba(255,255,255,0.4) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(255,255,255,0.4) 1px, transparent 1px)
-        `,
-        backgroundSize: '40px 40px',
-        maskImage: 'radial-gradient(ellipse at center, white 20%, transparent 80%)'
-      }} />
+      {/* Background Animated Gradient Mesh */}
+      <div 
+        className="absolute inset-0 pointer-events-none opacity-30 mix-blend-screen z-0"
+        style={{
+          background: `
+            radial-gradient(circle at 15% 25%, rgba(99, 102, 241, 0.35) 0%, transparent 45%),
+            radial-gradient(circle at 75% 15%, rgba(192, 38, 211, 0.30) 0%, transparent 45%),
+            radial-gradient(circle at 85% 75%, rgba(244, 63, 94, 0.25) 0%, transparent 50%),
+            radial-gradient(circle at 25% 85%, rgba(251, 113, 133, 0.30) 0%, transparent 45%)
+          `,
+          backgroundSize: '180% 180%',
+          animation: 'gradientFlow 20s ease infiniteAlternate',
+        }}
+      />
 
-      <Box sx={{ display: 'flex', width: '100%', maxWidth: '1400px', zIndex: 10, gap: { lg: 6, xl: 8 } }}>
+      {/* Grid Overlay Line Pattern */}
+      <div 
+        className="absolute inset-0 pointer-events-none opacity-15 z-0"
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.15) 1px, transparent 1px)
+          `,
+          backgroundSize: '30px 30px',
+        }}
+      />
+
+      <style>{`
+        @keyframes gradientFlow {
+          0% { background-position: 0% 0%; }
+          50% { background-position: 100% 100%; }
+          100% { background-position: 0% 0%; }
+        }
+      `}</style>
+
+      {/* Top Header Bar */}
+      <header className="relative z-20 flex items-center justify-between w-full max-w-7xl mx-auto mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 p-0.5 shadow-lg shadow-indigo-500/30">
+            <div className="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center">
+              <Cloud className="w-5 h-5 text-indigo-400" />
+            </div>
+          </div>
+          <span className="text-xl font-bold tracking-tight text-white !text-white">
+            Local IoT Cloud
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 backdrop-blur-md">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+          <span className="w-2 h-2 rounded-full bg-emerald-400" />
+          <span className="text-xs font-semibold text-emerald-300 tracking-wide">
+            System ● Online
+          </span>
+        </div>
+      </header>
+
+      {/* Main Centered Login Container */}
+      <div 
+        className="login-transparent relative z-10 w-full max-w-md mx-auto flex-1 flex items-center justify-center py-6 !bg-transparent"
+        style={{ backgroundColor: 'transparent' }}
+      >
         
-        {/* =========================================================================
-            LEFT SIDE: Brand, Features & Dashboard Preview
-            ========================================================================= */}
-        <Box sx={{ flex: 1, display: { xs: 'none', md: 'flex' }, flexDirection: 'column', pt: 2 }}>
+        {/* Glassmorphism Login Card */}
+        <div className="w-full rounded-3xl bg-white/80 backdrop-blur-2xl border border-white/80 p-6 sm:p-8 shadow-2xl text-slate-900">
           
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-            <Cloud sx={{ fontSize: '56px', color: 'white', filter: 'drop-shadow(0 4px 12px rgba(255,255,255,0.5))' }} />
-            <Typography variant="h3" sx={{ fontWeight: 800, color: 'white', letterSpacing: '-1px' }}>
-              Local IoT Cloud
-            </Typography>
-          </Box>
-          <Typography variant="h5" sx={{ color: 'rgba(255,255,255,0.9)', mb: 6, fontWeight: 500, letterSpacing: '0.5px' }}>
-            Smart • Secure • Offline • Real-Time
-          </Typography>
-
-          <Box sx={{ display: 'flex', flex: 1 }}>
-            {/* Feature Cards Stack */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: '320px' }}>
-              {features.map((feature, idx) => (
-                <Box key={idx} className="glass-card" sx={{ display: 'flex', alignItems: 'center', p: 2, gap: 2, '&:hover': { transform: 'translateX(8px)' } }}>
-                  <Box sx={{ 
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    width: '44px', height: '44px', borderRadius: '12px',
-                    background: 'linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 100%)',
-                    color: 'white', border: '1px solid rgba(255,255,255,0.4)',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                  }}>
-                    {React.cloneElement(feature.icon as React.ReactElement<{ fontSize?: string }>, { fontSize: 'small' })}
-                  </Box>
-                  <Box>
-                    <Typography sx={{ fontSize: '1rem', fontWeight: 600, color: 'white' }}>
-                      {feature.title}
-                    </Typography>
-                    <Typography sx={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)' }}>
-                      {feature.subtitle}
-                    </Typography>
-                  </Box>
-                </Box>
-              ))}
-            </Box>
-
-            {/* Mock Dashboard Preview Element */}
-            <MockDashboard />
-          </Box>
-        </Box>
-
-        {/* =========================================================================
-            RIGHT SIDE: Premium Glass Login Card
-            ========================================================================= */}
-        <Box sx={{ flex: isMobile ? '1' : '0 0 480px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <Box className="glass-panel" sx={{ width: '100%', maxWidth: '480px', p: { xs: 4, sm: 6 }, position: 'relative' }}>
-            
-            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-              <Box sx={{ 
-                width: 72, height: 72, borderRadius: '50%', 
-                background: 'linear-gradient(135deg, #38BDF8 0%, #EC4899 100%)',
-                display: 'flex', justifyContent: 'center', alignItems: 'center',
-                boxShadow: '0 8px 24px rgba(236,72,153,0.4)', border: '2px solid rgba(255,255,255,0.8)'
-              }}>
-                <Cloud sx={{ color: 'white', fontSize: 40 }} />
-              </Box>
-            </Box>
-
-            <Typography variant="h4" sx={{ color: 'white', fontWeight: 700, mb: 1, textAlign: 'center', letterSpacing: '-0.5px' }}>
-              Welcome Back
-            </Typography>
-            <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.8)', mb: 5, textAlign: 'center' }}>
-              Sign in to access your dashboard
-            </Typography>
-
-            {error && (
-              <Alert 
-                severity="error" 
-                sx={{ mb: 4, backgroundColor: 'rgba(255, 255, 255, 0.2)', color: '#991b1b', border: '1px solid rgba(255, 255, 255, 0.4)', borderRadius: '12px' }}
+          {/* Header Cloud Icon */}
+          <div className="flex justify-center mb-4">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-600 p-0.5 shadow-lg shadow-indigo-500/30">
+              <div 
+                className="w-full h-full rounded-[14px] flex items-center justify-center !bg-white"
+                style={{ backgroundColor: '#ffffff' }}
               >
-                {error}
-              </Alert>
-            )}
+                <Cloud className="w-7 h-7 text-indigo-600" />
+              </div>
+            </div>
+          </div>
 
-            <form onSubmit={handleSubmit}>
-              <Box sx={{ mb: 3 }}>
-                <Typography sx={{ color: 'white', mb: 1, fontSize: '0.95rem', fontWeight: 600 }}>
-                  Email Address
-                </Typography>
-                <TextField
-                  fullWidth
-                  className="glass-input"
-                  variant="outlined"
+          <h2 className="text-2xl font-extrabold text-center text-slate-900 tracking-tight">
+            Welcome Back
+          </h2>
+          <p className="text-xs sm:text-sm text-center text-slate-500 mt-1 mb-6 font-medium">
+            Access your Local IoT Cloud
+          </p>
+
+          {error && (
+            <div className="mb-5 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            
+            {/* Email Input */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                Email Address
+              </label>
+              <div className="relative flex items-center">
+                <Mail className="absolute left-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                <input
+                  type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  type="email"
-                  placeholder="name@company.com"
-                  slotProps={{
-                    input: {
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <Email />
-                        </InputAdornment>
-                      ),
-                    },
-                  }}
+                  placeholder="admin@localiot.com"
+                  className="w-full h-11 pl-10 pr-4 bg-slate-50/80 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 outline-none transition-all"
                 />
-              </Box>
-              
-              <Box sx={{ mb: 3 }}>
-                <Typography sx={{ color: 'white', mb: 1, fontSize: '0.95rem', fontWeight: 600 }}>
-                  Password
-                </Typography>
-                <TextField
-                  fullWidth
-                  className="glass-input"
-                  variant="outlined"
-                  type="password"
+              </div>
+            </div>
+
+            {/* Password Input */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                Password
+              </label>
+              <div className="relative flex items-center">
+                <Lock className="absolute left-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   placeholder="••••••••"
-                  slotProps={{
-                    input: {
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <Lock />
-                        </InputAdornment>
-                      ),
-                    },
-                  }}
+                  className="w-full h-11 pl-10 pr-10 bg-slate-50/80 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 outline-none transition-all"
                 />
-              </Box>
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 text-slate-400 hover:text-slate-600 cursor-pointer p-1"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
 
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-                <FormControlLabel 
-                  control={<Checkbox size="small" sx={{ color: 'rgba(255,255,255,0.6)', '&.Mui-checked': { color: 'white' } }} />} 
-                  label={<Typography sx={{ fontSize: '0.9rem', color: 'white', fontWeight: 500 }}>Remember Me</Typography>} 
+            {/* Options Row */}
+            <div className="flex items-center justify-between pt-1">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                 />
-                <Link href="#" underline="hover" sx={{ color: 'white', fontSize: '0.9rem', fontWeight: 600 }}>
-                  Forgot Password?
-                </Link>
-              </Box>
+                <span className="text-xs font-semibold text-slate-600">Remember Me</span>
+              </label>
 
-              <Button 
-                fullWidth 
-                type="submit" 
-                disabled={loading}
-                sx={{ 
-                  py: 2,
-                  borderRadius: '16px',
-                  background: 'linear-gradient(90deg, #3B82F6 0%, #8B5CF6 50%, #EC4899 100%)',
-                  backgroundSize: '200% auto',
-                  color: 'white',
-                  fontWeight: 700,
-                  fontSize: '1.1rem',
-                  letterSpacing: '1px',
-                  boxShadow: '0 10px 25px rgba(139,92,246,0.4)',
-                  transition: 'all 0.4s ease',
-                  '&:hover': {
-                    backgroundPosition: 'right center',
-                    transform: 'translateY(-3px) scale(1.02)',
-                    boxShadow: '0 15px 35px rgba(139,92,246,0.6)',
-                  },
-                  '&:disabled': {
-                    background: 'rgba(255,255,255,0.2)',
-                    color: 'rgba(255,255,255,0.5)',
-                    boxShadow: 'none'
-                  }
-                }}
+              <a
+                href="#"
+                onClick={(e) => { e.preventDefault(); alert("Please contact your Platform Super Admin to reset credentials."); }}
+                className="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors"
               >
-                {loading ? (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <CircularProgress size={22} sx={{ color: 'white' }} />
-                    <span>Connecting...</span>
-                  </Box>
-                ) : (
-                  'SIGN IN →'
-                )}
-              </Button>
+                Forgot Password?
+              </a>
+            </div>
 
-              <Box sx={{ mt: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Divider sx={{ flex: 1, borderColor: 'rgba(255,255,255,0.2)' }} />
-                <Typography sx={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.85rem' }}>or continue with</Typography>
-                <Divider sx={{ flex: 1, borderColor: 'rgba(255,255,255,0.2)' }} />
-              </Box>
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full h-12 mt-2 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-700 hover:via-purple-700 hover:to-pink-700 active:scale-[0.99] text-white font-bold text-sm tracking-wide shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Connecting...</span>
+                </div>
+              ) : (
+                <>
+                  <span>SIGN IN</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
 
-              <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 3 }}>
-                <IconButton sx={{ background: 'rgba(255,255,255,0.2)', color: 'white', '&:hover': { background: 'rgba(255,255,255,0.4)', transform: 'translateY(-2px)' }, transition: 'all 0.2s', width: 48, height: 48, borderRadius: '12px' }}>
-                  <Google />
-                </IconButton>
-                <IconButton sx={{ background: 'rgba(255,255,255,0.2)', color: 'white', '&:hover': { background: 'rgba(255,255,255,0.4)', transform: 'translateY(-2px)' }, transition: 'all 0.2s', width: 48, height: 48, borderRadius: '12px' }}>
-                  <Microsoft />
-                </IconButton>
-                <IconButton sx={{ background: 'rgba(255,255,255,0.2)', color: 'white', '&:hover': { background: 'rgba(255,255,255,0.4)', transform: 'translateY(-2px)' }, transition: 'all 0.2s', width: 48, height: 48, borderRadius: '12px' }}>
-                  <GitHub />
-                </IconButton>
-              </Box>
+          </form>
 
-            </form>
-          </Box>
-          <Box sx={{ position: 'absolute', bottom: 20, textAlign: 'center', width: '100%' }}>
-            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', fontWeight: 500 }}>
-              Version 1.0<br/>
-              © 2026 Local IoT Cloud Platform
-            </Typography>
-          </Box>
-        </Box>
-      </Box>
-    </Box>
+          {/* Footer Security Note */}
+          <div className="mt-6 pt-4 border-t border-slate-200/60 flex items-center justify-center gap-1.5 text-xs text-slate-500 font-medium">
+            <Lock className="w-3.5 h-3.5 text-indigo-600" />
+            <span>Secure local authentication</span>
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* Footer Copyright */}
+      <footer className="relative z-10 w-full text-center py-2 text-[11px] font-medium text-slate-400">
+        Version 1.0 • © 2026 Local IoT Cloud Platform
+      </footer>
+
+    </div>
   );
 };
 

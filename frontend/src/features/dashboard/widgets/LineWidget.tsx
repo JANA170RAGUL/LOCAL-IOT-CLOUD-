@@ -56,10 +56,11 @@ export const LineWidget: React.FC<{ config: WidgetConfig }> = ({ config }) => {
     );
   }
 
-  // Filter numeric values only
+  // Filter numeric values only & keep the 15 most recent points for clean widget rendering
   const numericData = data.items
     .filter(d => typeof d.value === 'number' || !isNaN(Number(d.value)))
-    .map(d => ({ timestamp: d.timestamp, value: Number(d.value) }));
+    .map(d => ({ timestamp: d.timestamp, value: Number(d.value) }))
+    .slice(-15);
 
   return (
     <LineChart

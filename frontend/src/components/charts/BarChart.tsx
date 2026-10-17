@@ -29,6 +29,7 @@ export const BarChart: React.FC<BarChartProps> = ({
     title: title ? { text: title, left: 'center' } : undefined,
     tooltip: {
       trigger: 'axis',
+      confine: true,
       axisPointer: { type: 'shadow' },
       valueFormatter: (value: any) => `${value} ${unit}`,
     },

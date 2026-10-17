@@ -42,6 +42,6 @@ class FeatureService:
         return False
         
     def has_valid_license(self) -> bool:
-        return self.is_licensed
+        return self.is_licensed and len(self.features) > 0
 
 feature_service = FeatureService()

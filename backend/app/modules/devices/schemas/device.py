@@ -92,6 +92,7 @@ class DeviceResponse(DeviceBase):
     gateway_id: str
     status: str
     last_seen: Optional[datetime] = None
+    api_key: Optional[str] = Field(None, description="Generated primary API key on device creation")
 
     # Audit
     created_at: datetime

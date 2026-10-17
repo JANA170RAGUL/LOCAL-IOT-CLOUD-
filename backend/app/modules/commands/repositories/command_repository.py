@@ -1,9 +1,12 @@
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
 from app.modules.commands.models.command import DeviceCommand
+from app.modules.commands.models.command_status import CommandStatus
 from app.modules.commands.schemas.command import CommandCreate, CommandUpdate
+
 
 class CommandRepository:
     @staticmethod
@@ -24,10 +27,18 @@ class CommandRepository:
 
     @staticmethod
     def create(db: Session, device_id: str, obj_in: CommandCreate) -> DeviceCommand:
+        now = datetime.now(timezone.utc)
+        exp_seconds = obj_in.expires_in_seconds if obj_in.expires_in_seconds and obj_in.expires_in_seconds > 0 else 300
+        expires_at = now + timedelta(seconds=exp_seconds)
+
         db_obj = DeviceCommand(
             device_id=device_id,
             command_type=obj_in.command_type,
             payload=obj_in.payload,
+            status=CommandStatus.QUEUED.value,
+            expires_at=expires_at,
+            max_attempts=3,
+            attempt_count=0,
         )
         db.add(db_obj)
         db.commit()

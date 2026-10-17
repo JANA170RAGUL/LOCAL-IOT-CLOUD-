@@ -34,6 +34,9 @@ from app.modules.gateways.schemas.gateway import (
 )
 from app.modules.gateways.services.gateway_service import GatewayService
 
+from app.core.access_scope import AccessScope, get_access_scope
+from app.core.tenant_guard import TenantGuard
+
 router = APIRouter(
     tags=["Gateways"],
 )
@@ -55,11 +58,17 @@ def create_gateway(
     payload: GatewayCreate,
     db: Session = Depends(get_db),
     svc: GatewayService = Depends(get_gateway_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> GatewayResponse:
-    # License limit check
+    TenantGuard.project(db, project_id, scope)
+    
+    # -----------------------------------------------------------------------
+    # License Enforcement: Check total active gateway count against feature limits
+    # -----------------------------------------------------------------------
     current_count = db.query(Gateway).filter(Gateway.is_active == True).count()
     check_feature_limit("gateways", current_count)
     
+    # Delegate business logic and persistence to GatewayService layer
     return svc.create_gateway(db, project_id, payload)
 
 
@@ -91,7 +100,9 @@ def list_gateways(
     page_size: int = Query(DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE, description="Items per page"),
     db: Session = Depends(get_db),
     svc: GatewayService = Depends(get_gateway_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> GatewayListResponse:
+    TenantGuard.project(db, project_id, scope)
     filters = GatewayFilter(
         search=search,
         status=gateway_status,
@@ -116,7 +127,9 @@ def get_gateway(
     gateway_id: str,
     db: Session = Depends(get_db),
     svc: GatewayService = Depends(get_gateway_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> GatewayResponse:
+    TenantGuard.gateway(db, gateway_id, scope)
     return svc.get_gateway(db, gateway_id)
 
 
@@ -135,7 +148,9 @@ def patch_gateway(
     payload: GatewayUpdate,
     db: Session = Depends(get_db),
     svc: GatewayService = Depends(get_gateway_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> GatewayResponse:
+    TenantGuard.gateway(db, gateway_id, scope)
     return svc.update_gateway(db, gateway_id, payload)
 
 
@@ -154,7 +169,9 @@ def put_gateway(
     payload: GatewayUpdate,
     db: Session = Depends(get_db),
     svc: GatewayService = Depends(get_gateway_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> GatewayResponse:
+    TenantGuard.gateway(db, gateway_id, scope)
     return svc.update_gateway(db, gateway_id, payload)
 
 
@@ -172,5 +189,7 @@ def delete_gateway(
     gateway_id: str,
     db: Session = Depends(get_db),
     svc: GatewayService = Depends(get_gateway_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> dict:
+    TenantGuard.gateway(db, gateway_id, scope)
     return svc.deactivate_gateway(db, gateway_id)

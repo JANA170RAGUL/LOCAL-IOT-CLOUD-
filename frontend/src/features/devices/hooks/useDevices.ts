@@ -5,6 +5,11 @@ import {
   createDevice,
   updateDevice,
   deleteDevice,
+  getDeviceCredentials,
+  createDeviceCredential,
+  rotateDeviceCredential,
+  revokeDeviceCredential,
+  getAllDevices,
 } from '../api/device';
 import type { DeviceCreate, DeviceUpdate, DeviceFilter } from '../types';
 
@@ -15,6 +20,7 @@ export const deviceKeys = {
     [...deviceKeys.lists(), { gatewayId, page, pageSize, ...filters }] as const,
   details: () => [...deviceKeys.all, 'detail'] as const,
   detail: (id: string) => [...deviceKeys.details(), id] as const,
+  credentials: (id: string) => [...deviceKeys.detail(id), 'credentials'] as const,
 };
 
 export const useDevicesQuery = (
@@ -70,5 +76,50 @@ export const useDeleteDeviceMutation = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: deviceKeys.lists() });
     },
+  });
+};
+
+export const useDeviceCredentialsQuery = (deviceId: string) => {
+  return useQuery({
+    queryKey: deviceKeys.credentials(deviceId),
+    queryFn: () => getDeviceCredentials(deviceId),
+    enabled: !!deviceId,
+  });
+};
+
+export const useCreateDeviceCredentialMutation = (deviceId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (name?: string) => createDeviceCredential(deviceId, name),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: deviceKeys.credentials(deviceId) });
+    },
+  });
+};
+
+export const useRotateDeviceCredentialMutation = (deviceId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (credentialId: string) => rotateDeviceCredential(deviceId, credentialId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: deviceKeys.credentials(deviceId) });
+    },
+  });
+};
+
+export const useRevokeDeviceCredentialMutation = (deviceId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (credentialId: string) => revokeDeviceCredential(deviceId, credentialId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: deviceKeys.credentials(deviceId) });
+    },
+  });
+};
+
+export const useAllDevicesQuery = (search?: string) => {
+  return useQuery({
+    queryKey: ['devices', 'all', search],
+    queryFn: () => getAllDevices(search),
   });
 };

@@ -7,41 +7,58 @@ import type { WidgetConfig } from '../../types';
 import type { WidgetManifest } from '../../registry/types';
 
 export const AiRecommendationWidget: React.FC<{ config: WidgetConfig }> = ({ config }) => {
-  const recommendation = (config as any).mockRecommendation ?? "Reduce Pump Speed";
-  const reason = (config as any).mockReason ?? "Energy consumption increased by 18%";
-  const savings = (config as any).mockSavings ?? "11%";
+  const recData = (config as any).recommendationData;
+  const recommendation = recData?.recommendation;
+  const reason = recData?.reason;
+  const savings = recData?.savings;
+
+  const hasData = recData !== undefined && recommendation !== undefined;
 
   return (
-    <Box sx={{ height: '100%', p: 2, display: 'flex', flexDirection: 'column', bgcolor: '#fffde7', border: '1px solid #fff59d' }}>
-      <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2, display: 'flex', alignItems: 'center', color: '#f57f17' }}>
+    <Box sx={{ height: '100%', p: 2, display: 'flex', flexDirection: 'column', bgcolor: hasData ? '#fffde7' : 'background.paper', border: hasData ? '1px solid #fff59d' : 'none' }}>
+      <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2, display: 'flex', alignItems: 'center', color: hasData ? '#f57f17' : 'text.primary' }}>
         <LightbulbIcon sx={{ mr: 1 }} />
         {config.title || 'AI Recommendation'}
       </Typography>
 
-      <Box sx={{ flexGrow: 1 }}>
-        <Typography variant="h6" sx={{ color: 'text.primary', mb: 1, fontWeight: 'bold' }}>
-          {recommendation}
-        </Typography>
-
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 'bold' }}>Reason</Typography>
-          <Typography variant="body2">{reason}</Typography>
+      {!hasData ? (
+        <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#f8f9fa', p: 2, borderRadius: 1 }}>
+          <Typography variant="body2" color="text.secondary" align="center">
+            No active AI recommendations available.
+          </Typography>
         </Box>
+      ) : (
+        <>
+          <Box sx={{ flexGrow: 1 }}>
+            <Typography variant="h6" sx={{ color: 'text.primary', mb: 1, fontWeight: 'bold' }}>
+              {recommendation}
+            </Typography>
 
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: '#e8f5e9', p: 1, borderRadius: 1 }}>
-          <Typography variant="body2" sx={{ color: 'success.dark', fontWeight: 'bold' }}>Potential Savings</Typography>
-          <Typography variant="body1" sx={{ color: 'success.main', fontWeight: 'bold' }}>{savings}</Typography>
-        </Box>
-      </Box>
+            {reason && (
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 'bold' }}>Reason</Typography>
+                <Typography variant="body2">{reason}</Typography>
+              </Box>
+            )}
 
-      <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
-        <Button variant="contained" color="primary" startIcon={<CheckCircleIcon />} fullWidth size="small" sx={{ textTransform: 'none' }}>
-          Approve
-        </Button>
-        <Button variant="outlined" color="inherit" startIcon={<CancelIcon />} fullWidth size="small" sx={{ textTransform: 'none' }}>
-          Ignore
-        </Button>
-      </Box>
+            {savings && (
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: '#e8f5e9', p: 1, borderRadius: 1 }}>
+                <Typography variant="body2" sx={{ color: 'success.dark', fontWeight: 'bold' }}>Potential Savings</Typography>
+                <Typography variant="body1" sx={{ color: 'success.main', fontWeight: 'bold' }}>{savings}</Typography>
+              </Box>
+            )}
+          </Box>
+
+          <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+            <Button variant="contained" color="primary" startIcon={<CheckCircleIcon />} fullWidth size="small" sx={{ textTransform: 'none' }}>
+              Approve
+            </Button>
+            <Button variant="outlined" color="inherit" startIcon={<CancelIcon />} fullWidth size="small" sx={{ textTransform: 'none' }}>
+              Ignore
+            </Button>
+          </Box>
+        </>
+      )}
     </Box>
   );
 };

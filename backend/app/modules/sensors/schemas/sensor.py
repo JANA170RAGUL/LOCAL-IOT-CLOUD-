@@ -15,9 +15,9 @@ SensorListResponse  — paginated list envelope
 """
 
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.core.constants import DataType
 from app.shared.iot import MeasurementUnit, SensorType
@@ -37,9 +37,9 @@ STATUS_PATTERN = "^(ACTIVE|INACTIVE|SUSPENDED|TRIAL|EXPIRED)$"
 class SensorBase(BaseModel):
     code: str = Field(..., min_length=2, max_length=20, description="Short unique code within the device")
     name: str = Field(..., min_length=3, max_length=150)
-    sensor_type: SensorType = Field(SensorType.CUSTOM, description="Primary type of the sensor")
-    unit: Optional[MeasurementUnit] = Field(None, description="Standard or custom measurement unit symbol")
-    data_type: DataType = Field(DataType.NUMBER, description="Telemetry data type (e.g. number)")
+    sensor_type: str = Field(SensorType.CUSTOM.value, description="Primary type of the sensor")
+    unit: Optional[str] = Field(None, description="Standard or custom measurement unit symbol")
+    data_type: str = Field(DataType.NUMBER.value, description="Telemetry data type (e.g. number)")
 
     # Boundaries
     min_value: Optional[float] = Field(None, description="Optional minimum boundary")
@@ -50,6 +50,15 @@ class SensorBase(BaseModel):
     sampling_interval: Optional[int] = Field(5, ge=1, description="Interval in seconds between readings")
     calibration_offset: float = Field(0.0, description="Calibration offset additive factor")
     calibration_scale: float = Field(1.0, description="Calibration scale multiplier factor")
+
+    @field_validator("unit", mode="before")
+    @classmethod
+    def sanitize_unit(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            v = v.strip()
+            if not v:
+                return None
+        return v
 
 
 # ---------------------------------------------------------------------------
@@ -76,9 +85,9 @@ class SensorCreate(SensorBase):
 
 class SensorUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=3, max_length=150)
-    sensor_type: Optional[SensorType] = None
-    unit: Optional[MeasurementUnit] = None
-    data_type: Optional[DataType] = None
+    sensor_type: Optional[str] = None
+    unit: Optional[str] = None
+    data_type: Optional[str] = None
 
     min_value: Optional[float] = None
     max_value: Optional[float] = None
@@ -89,6 +98,15 @@ class SensorUpdate(BaseModel):
     calibration_scale: Optional[float] = None
 
     status: Optional[str] = Field(None, pattern=STATUS_PATTERN)
+
+    @field_validator("unit", mode="before")
+    @classmethod
+    def sanitize_unit(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            v = v.strip()
+            if not v:
+                return None
+        return v
 
 
 # ---------------------------------------------------------------------------
@@ -121,9 +139,18 @@ class SensorSummary(BaseModel):
     code: str
     name: str
     status: str
-    sensor_type: SensorType
-    unit: Optional[MeasurementUnit] = None
+    sensor_type: str
+    unit: Optional[str] = None
     is_active: bool
+
+    @field_validator("unit", mode="before")
+    @classmethod
+    def sanitize_unit(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            v = v.strip()
+            if not v:
+                return None
+        return v
 
 
 # ---------------------------------------------------------------------------
@@ -134,7 +161,7 @@ class SensorFilter(BaseModel):
     """Query parameters accepted by the list_sensors endpoint."""
     search: Optional[str] = Field(None, description="Keyword search on name, code")
     status: Optional[str] = Field(None, pattern=STATUS_PATTERN, description="Filter by status")
-    sensor_type: Optional[SensorType] = Field(None, description="Filter by sensor type enum")
+    sensor_type: Optional[str] = Field(None, description="Filter by sensor type string")
     page: int = Field(1, ge=1)
     page_size: int = Field(20, ge=1, le=200)
 

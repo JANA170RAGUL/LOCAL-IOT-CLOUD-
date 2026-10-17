@@ -41,6 +41,11 @@ from app.shared.services.base_service import BaseService
 logger = logging.getLogger(__name__)
 
 
+from app.modules.licensing.features import LicenseFeature
+from app.modules.licensing.services.license_policy import license_policy
+from app.modules.licensing.services.license_usage import license_usage
+
+
 class OrganizationService(
     BaseService[
         Organization,
@@ -64,6 +69,14 @@ class OrganizationService(
             OrganizationCodeTaken  — if code is already registered
             OrganizationEmailTaken — if email is already registered
         """
+        snapshot = license_policy.get_snapshot(db)
+        current_count = license_usage.count_organizations(db)
+        license_policy.ensure_capacity(
+            snapshot,
+            LicenseFeature.ORGANIZATIONS,
+            current_count=current_count,
+        )
+
         if self.repository.exists_by_code(db, payload.code):
             raise OrganizationCodeTaken()
 
@@ -129,7 +142,7 @@ class OrganizationService(
         self,
         db: Session,
         filters: OrganizationFilter,
-        current_user: User,
+        current_user: User | None = None,
     ) -> OrganizationListResponse:
         """
         Return a paginated list of organizations.
@@ -140,7 +153,7 @@ class OrganizationService(
           - pagination      (page, page_size)
         """
         allowed_org_ids = None
-        if current_user.role not in ["Super Admin", "Admin"]:
+        if current_user and current_user.role not in ["Super Admin", "Admin"]:
             # Customer roles can only see their own organization
             if current_user.organization_id:
                 allowed_org_ids = [current_user.organization_id]

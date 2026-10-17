@@ -15,6 +15,7 @@ Usage
 """
 
 from functools import lru_cache
+from pathlib import Path
 from typing import List
 
 from pydantic import Field, field_validator
@@ -40,10 +41,17 @@ class Settings(BaseSettings):
     # Application
     # -----------------------------------------------------------------------
     app_name: str = Field("LocalIoTCloud", alias="APP_NAME")
+    service_name: str = Field("api", alias="SERVICE_NAME")
     app_env: str = Field("development", alias="APP_ENV")
     debug: bool = Field(False, alias="DEBUG")
     secret_key: str = Field(..., alias="SECRET_KEY")
     api_v1_prefix: str = Field("/api/v1", alias="API_V1_PREFIX")
+    allow_demo_data: bool = Field(False, alias="ALLOW_DEMO_DATA")
+    allow_simulators: bool = Field(False, alias="ALLOW_SIMULATORS")
+    ai_provider: str = Field("unavailable", alias="AI_PROVIDER")
+    ai_model_path: str = Field("ai_models/pest_detection/pest_detector.onnx", alias="AI_MODEL_PATH")
+    ai_model_checksum: str = Field("", alias="AI_MODEL_CHECKSUM")
+    notification_provider: str = Field("smtp", alias="NOTIFICATION_PROVIDER")
 
     # -----------------------------------------------------------------------
     # Database – MySQL / MariaDB
@@ -75,13 +83,33 @@ class Settings(BaseSettings):
     redis_db: int = Field(0, alias="REDIS_DB")
     redis_max_connections: int = Field(20, alias="REDIS_MAX_CONNECTIONS")
 
+    telemetry_stream_name: str = Field("localiot:telemetry", alias="TELEMETRY_STREAM_NAME")
+    telemetry_consumer_group: str = Field("telemetry-workers", alias="TELEMETRY_CONSUMER_GROUP")
+    telemetry_stream_maxlen: int = Field(500000, alias="TELEMETRY_STREAM_MAXLEN")
+    telemetry_read_count: int = Field(50, alias="TELEMETRY_READ_COUNT")
+    telemetry_block_ms: int = Field(5000, alias="TELEMETRY_BLOCK_MS")
+    telemetry_pending_idle_ms: int = Field(60000, alias="TELEMETRY_PENDING_IDLE_MS")
+    telemetry_dlq_stream: str = Field("localiot:telemetry:dlq", alias="TELEMETRY_DLQ_STREAM")
+    telemetry_max_retries: int = Field(5, alias="TELEMETRY_MAX_RETRIES")
+
     # -----------------------------------------------------------------------
-    # Authentication – JWT
+    # Authentication – JWT & Sessions
     # -----------------------------------------------------------------------
     jwt_secret_key: str = Field(..., alias="JWT_SECRET_KEY")
     jwt_algorithm: str = Field("HS256", alias="JWT_ALGORITHM")
-    access_token_expire_minutes: int = Field(10080, alias="ACCESS_TOKEN_EXPIRE_MINUTES")
+    access_token_expire_minutes: int = Field(15, alias="ACCESS_TOKEN_EXPIRE_MINUTES")
     refresh_token_expire_days: int = Field(7, alias="REFRESH_TOKEN_EXPIRE_DAYS")
+    refresh_token_pepper: str = Field("default-refresh-pepper-change-in-production-1234567890", alias="REFRESH_TOKEN_PEPPER")
+    login_max_attempts: int = Field(5, alias="LOGIN_MAX_ATTEMPTS")
+    login_lock_minutes: int = Field(15, alias="LOGIN_LOCK_MINUTES")
+    password_reset_expire_minutes: int = Field(30, alias="PASSWORD_RESET_EXPIRE_MINUTES")
+    activation_token_expire_hours: int = Field(24, alias="ACTIVATION_TOKEN_EXPIRE_HOURS")
+    device_credential_pepper: str = Field("default-dev-pepper-change-in-production-1234567890", alias="DEVICE_CREDENTIAL_PEPPER")
+    channel_api_key_pepper: str = Field("default-channel-pepper-change-in-production-0987654321", alias="CHANNEL_API_KEY_PEPPER")
+    webhook_encryption_key: str = Field("gAAAAABmX8v1kR2wT3yU4iO5pL6aS7dF8gH9jK0lM1nO2pQ=", alias="WEBHOOK_ENCRYPTION_KEY")
+    channel_bulk_max_points: int = Field(1000, alias="CHANNEL_BULK_MAX_POINTS")
+    channel_import_max_bytes: int = Field(5 * 1024 * 1024, alias="CHANNEL_IMPORT_MAX_BYTES")
+    channel_import_max_rows: int = Field(50000, alias="CHANNEL_IMPORT_MAX_ROWS")
 
     # -----------------------------------------------------------------------
     # Message Broker – MQTT
@@ -104,7 +132,7 @@ class Settings(BaseSettings):
     # -----------------------------------------------------------------------
     # CORS
     # -----------------------------------------------------------------------
-    allowed_origins: str = Field("http://localhost:3000", alias="ALLOWED_ORIGINS")
+    allowed_origins: str = Field("http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175", alias="ALLOWED_ORIGINS")
 
     # -----------------------------------------------------------------------
     # Logging
@@ -197,7 +225,7 @@ class Settings(BaseSettings):
     # -----------------------------------------------------------------------
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(Path(__file__).resolve().parent.parent.parent / ".env", ".env"),
         env_file_encoding="utf-8",
         extra="ignore",           # silently ignore unrecognised env vars
         populate_by_name=True,    # allow both alias and field name
@@ -214,7 +242,7 @@ def get_settings() -> Settings:
     Returns a cached Settings instance (loaded once at startup).
     Call ``get_settings.cache_clear()`` in tests to reset between cases.
     """
-    return Settings()
+    return Settings()  # type: ignore
 
 
 # Module-level alias – import this everywhere:

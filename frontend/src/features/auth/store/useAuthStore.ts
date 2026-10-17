@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
 
 interface User {
@@ -11,30 +12,18 @@ interface User {
 
 interface AuthState {
   token: string | null;
+  refreshToken: string | null;
   user: User | null;
   isAuthenticated: boolean;
-  setAuth: (token: string, user: User) => void;
+  setAuth: (token: string, refreshToken: string, user: User) => void;
+  updateTokens: (token: string, refreshToken: string) => void;
   logout: () => void;
 }
 
 // Load token from localStorage on initialization
 let validToken = localStorage.getItem('token');
+let validRefreshToken = localStorage.getItem('refresh_token');
 let initialUser = null;
-
-if (validToken) {
-  try {
-    const decoded: any = jwtDecode(validToken);
-    if (decoded && decoded.exp && decoded.exp * 1000 < Date.now()) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      validToken = null;
-    }
-  } catch (e) {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    validToken = null;
-  }
-}
 
 if (validToken) {
   const savedUser = localStorage.getItem('user');
@@ -49,16 +38,28 @@ if (validToken) {
 
 export const useAuthStore = create<AuthState>((set) => ({
   token: validToken,
+  refreshToken: validRefreshToken,
   user: initialUser,
   isAuthenticated: !!validToken,
-  setAuth: (token: string, user: User) => {
+  setAuth: (token: string, refreshToken: string, user: User) => {
     localStorage.setItem('token', token);
+    localStorage.setItem('refresh_token', refreshToken);
     localStorage.setItem('user', JSON.stringify(user));
-    set({ token, user, isAuthenticated: true });
+    set({ token, refreshToken, user, isAuthenticated: true });
+  },
+  updateTokens: (token: string, refreshToken: string) => {
+    localStorage.setItem('token', token);
+    localStorage.setItem('refresh_token', refreshToken);
+    set({ token, refreshToken });
   },
   logout: () => {
+    const rf = localStorage.getItem('refresh_token');
+    if (rf) {
+      axios.post('/api/v1/auth/logout', { refresh_token: rf }).catch(() => {});
+    }
     localStorage.removeItem('token');
+    localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');
-    set({ token: null, user: null, isAuthenticated: false });
+    set({ token: null, refreshToken: null, user: null, isAuthenticated: false });
   },
 }));

@@ -34,6 +34,9 @@ from app.modules.devices.schemas.device import (
 )
 from app.modules.devices.services.device_service import DeviceService
 
+from app.core.access_scope import AccessScope, get_access_scope
+from app.core.tenant_guard import TenantGuard
+
 router = APIRouter(
     tags=["Devices"],
 )
@@ -55,7 +58,9 @@ def create_device(
     payload: DeviceCreate,
     db: Session = Depends(get_db),
     svc: DeviceService = Depends(get_device_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> DeviceResponse:
+    TenantGuard.gateway(db, gateway_id, scope)
     # License limit check
     current_count = db.query(Device).filter(Device.is_active == True).count()
     check_feature_limit("devices", current_count)
@@ -87,7 +92,9 @@ def list_devices(
     page_size: int = Query(DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE, description="Items per page"),
     db: Session = Depends(get_db),
     svc: DeviceService = Depends(get_device_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> DeviceListResponse:
+    TenantGuard.gateway(db, gateway_id, scope)
     filters = DeviceFilter(
         search=search,
         status=device_status,
@@ -112,7 +119,9 @@ def get_device(
     device_id: str,
     db: Session = Depends(get_db),
     svc: DeviceService = Depends(get_device_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> DeviceResponse:
+    TenantGuard.device(db, device_id, scope)
     return svc.get_device(db, device_id)
 
 
@@ -131,7 +140,9 @@ def patch_device(
     payload: DeviceUpdate,
     db: Session = Depends(get_db),
     svc: DeviceService = Depends(get_device_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> DeviceResponse:
+    TenantGuard.device(db, device_id, scope)
     return svc.update_device(db, device_id, payload)
 
 
@@ -150,7 +161,9 @@ def put_device(
     payload: DeviceUpdate,
     db: Session = Depends(get_db),
     svc: DeviceService = Depends(get_device_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> DeviceResponse:
+    TenantGuard.device(db, device_id, scope)
     return svc.update_device(db, device_id, payload)
 
 
@@ -168,5 +181,25 @@ def delete_device(
     device_id: str,
     db: Session = Depends(get_db),
     svc: DeviceService = Depends(get_device_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> dict:
+    TenantGuard.device(db, device_id, scope)
     return svc.deactivate_device(db, device_id)
+
+
+@router.get(
+    "/devices/",
+    response_model=list[DeviceResponse],
+    summary="List all devices",
+    description="Fetch all active registered devices globally for select dropdowns.",
+)
+def list_all_devices(
+    search: str | None = Query(None, description="Keyword search across device name or code"),
+    db: Session = Depends(get_db),
+    scope: AccessScope = Depends(get_access_scope),
+):
+    query = db.query(Device).filter(Device.is_active == True)
+    if search:
+        query = query.filter((Device.name.ilike(f"%{search}%")) | (Device.code.ilike(f"%{search}%")))
+    return query.all()
+

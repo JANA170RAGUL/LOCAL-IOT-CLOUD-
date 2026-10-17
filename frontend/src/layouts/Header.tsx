@@ -73,25 +73,37 @@ export const Header: React.FC = () => {
           sx={{
             display: 'flex',
             alignItems: 'center',
-            backgroundColor: alpha(theme.palette.text.primary, 0.05),
-            borderRadius: '8px',
+            backgroundColor: 'background.paper',
+            boxShadow: 'inset 3px 3px 6px var(--neu-shadow-dark), inset -3px -3px 6px var(--neu-shadow-light)',
+            borderRadius: '12px',
             px: 2,
             py: 0.5,
-            width: 300,
+            width: 320,
+            border: '1px solid rgba(255, 255, 255, 0.3)',
           }}
         >
           <SearchIcon sx={{ color: 'text.secondary', mr: 1, fontSize: 20 }} />
           <InputBase
             placeholder="Search resources, alerts..."
+            className="header-search-input"
             sx={{ fontSize: '0.9rem', width: '100%', color: 'inherit' }}
           />
         </Box>
 
         {/* Right Side: Actions */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           {/* Theme Palette Toggle */}
           <Tooltip title="Switch Theme Palette">
-            <IconButton onClick={handleOpenThemeMenu} color="inherit">
+            <IconButton
+              onClick={handleOpenThemeMenu}
+              color="inherit"
+              sx={{
+                boxShadow: '4px 4px 8px var(--neu-shadow-dark), -4px -4px 8px var(--neu-shadow-light)',
+                borderRadius: '12px',
+                p: 1.2,
+                backgroundColor: 'background.paper',
+              }}
+            >
               <PaletteIcon />
             </IconButton>
           </Tooltip>
@@ -131,7 +143,16 @@ export const Header: React.FC = () => {
 
           {/* Notifications */}
           <Tooltip title="Notifications">
-            <IconButton color="inherit" onClick={(e) => setNotifAnchorEl(e.currentTarget)}>
+            <IconButton
+              color="inherit"
+              onClick={(e) => setNotifAnchorEl(e.currentTarget)}
+              sx={{
+                boxShadow: '4px 4px 8px var(--neu-shadow-dark), -4px -4px 8px var(--neu-shadow-light)',
+                borderRadius: '12px',
+                p: 1.2,
+                backgroundColor: 'background.paper',
+              }}
+            >
               <Badge badgeContent={unreadCount} color="error" max={99}>
                 <NotificationsIcon />
               </Badge>
@@ -171,7 +192,24 @@ export const Header: React.FC = () => {
           {/* Profile */}
           <Box 
             onClick={(e) => setProfileAnchorEl(e.currentTarget)}
-            sx={{ display: 'flex', alignItems: 'center', ml: 1, gap: 1.5, cursor: 'pointer', p: 0.5, borderRadius: 1, '&:hover': { bgcolor: 'action.hover' } }}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              ml: 1,
+              gap: 1.5,
+              cursor: 'pointer',
+              px: 1.5,
+              py: 0.8,
+              borderRadius: '16px',
+              backgroundColor: 'background.paper',
+              boxShadow: '4px 4px 10px var(--neu-shadow-dark), -4px -4px 10px var(--neu-shadow-light)',
+              border: '1px solid rgba(255, 255, 255, 0.4)',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                boxShadow: '6px 6px 14px var(--neu-shadow-dark), -6px -6px 14px var(--neu-shadow-light)',
+                transform: 'translateY(-1px)',
+              }
+            }}
           >
             <Avatar
               alt={user?.first_name || 'User'}

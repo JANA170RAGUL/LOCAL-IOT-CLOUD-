@@ -33,6 +33,9 @@ from app.modules.sensors.schemas.sensor import (
 from app.modules.sensors.services.sensor_service import SensorService
 from app.shared.iot import SensorType
 
+from app.core.access_scope import AccessScope, get_access_scope
+from app.core.tenant_guard import TenantGuard
+
 router = APIRouter(
     tags=["Sensors"],
 )
@@ -54,7 +57,9 @@ def create_sensor(
     payload: SensorCreate,
     db: Session = Depends(get_db),
     svc: SensorService = Depends(get_sensor_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> SensorResponse:
+    TenantGuard.device(db, device_id, scope)
     return svc.create_sensor(db, device_id, payload)
 
 
@@ -77,12 +82,14 @@ def list_sensors(
         pattern="^(ACTIVE|INACTIVE|SUSPENDED|TRIAL|EXPIRED)$",
         description="Filter by sensor lifecycle status",
     ),
-    sensor_type: SensorType | None = Query(None, description="Filter by sensor type"),
+    sensor_type: str | None = Query(None, description="Filter by sensor type"),
     page: int = Query(1, ge=1, description="Page number (1-indexed)"),
     page_size: int = Query(DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE, description="Items per page"),
     db: Session = Depends(get_db),
     svc: SensorService = Depends(get_sensor_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> SensorListResponse:
+    TenantGuard.device(db, device_id, scope)
     filters = SensorFilter(
         search=search,
         status=sensor_status,
@@ -107,7 +114,9 @@ def get_sensor(
     sensor_id: str,
     db: Session = Depends(get_db),
     svc: SensorService = Depends(get_sensor_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> SensorResponse:
+    TenantGuard.sensor(db, sensor_id, scope)
     return svc.get_sensor(db, sensor_id)
 
 
@@ -126,7 +135,9 @@ def patch_sensor(
     payload: SensorUpdate,
     db: Session = Depends(get_db),
     svc: SensorService = Depends(get_sensor_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> SensorResponse:
+    TenantGuard.sensor(db, sensor_id, scope)
     return svc.update_sensor(db, sensor_id, payload)
 
 
@@ -145,7 +156,9 @@ def put_sensor(
     payload: SensorUpdate,
     db: Session = Depends(get_db),
     svc: SensorService = Depends(get_sensor_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> SensorResponse:
+    TenantGuard.sensor(db, sensor_id, scope)
     return svc.update_sensor(db, sensor_id, payload)
 
 
@@ -163,5 +176,7 @@ def delete_sensor(
     sensor_id: str,
     db: Session = Depends(get_db),
     svc: SensorService = Depends(get_sensor_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> dict:
+    TenantGuard.sensor(db, sensor_id, scope)
     return svc.deactivate_sensor(db, sensor_id)

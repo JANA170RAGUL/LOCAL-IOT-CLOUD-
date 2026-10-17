@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Optional, Any
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field
 
 
 class AlertBase(BaseModel):
@@ -24,7 +24,7 @@ class AlertBase(BaseModel):
     acknowledged_at: Optional[datetime] = None
     resolved: bool = False
     resolved_at: Optional[datetime] = None
-    metadata_json: Optional[dict[str, Any]] = Field(None, serialization_alias="metadata")
+    metadata_json: Optional[dict[str, Any]] = Field(None, validation_alias=AliasChoices("metadata_json", "metadata"), serialization_alias="metadata")
 
 
 class AlertCreate(AlertBase):

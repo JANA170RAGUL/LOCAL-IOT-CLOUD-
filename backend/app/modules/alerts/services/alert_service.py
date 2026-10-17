@@ -8,6 +8,13 @@ from datetime import datetime, timezone
 import json
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from app.modules.notifications.repositories.notification_repository import NotificationRepository
+from app.modules.notifications.schemas.notification import NotificationCreate
+from app.modules.settings.services.settings_service import SettingsService
+
+
+
+
 
 from app.database.redis import get_redis_client
 
@@ -75,6 +82,23 @@ class AlertService(BaseService[Alert, AlertRepository]):
         )
         created = self.repository.create(db, alert)
         self._publish_alert(created)
+
+        try:
+            settings_service = SettingsService(db)
+            email_settings = settings_service.get_category_settings("email")
+            target_email = email_settings.get("senderEmail") if email_settings else None
+
+            if target_email:
+                notif_repo = NotificationRepository(db)
+                notif_repo.create(NotificationCreate(
+                    channel = "EMAIL",
+                    recipient = target_email,
+                    subject = f"[{created.severity}] Alert :{created.title}",
+                    body = f"Security Alert Triggered:\n\nTitle: {created.title}\nSeverity: {created.severity}\nMessage: {created.message}\nStatus: {created.status}\nCreated At: {created.created_at}",
+                    status = "PENDING"
+                ))
+        except Exception as e:
+            pass
         return created
 
     def get_alert(self, db: Session, alert_id: str) -> Alert:

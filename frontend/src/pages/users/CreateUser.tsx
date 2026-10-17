@@ -15,20 +15,25 @@ import {
 } from 'lucide-react';
 import { userApi } from '@/features/users/api/user';
 import type { UserCreate } from '@/features/users/types';
+import { useAuthStore } from '@/features/auth/store/useAuthStore';
 
 export function CreateUser() {
   const navigate = useNavigate();
+  const { user: currentUser } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isSuperAdmin = currentUser?.role === 'Super Admin';
 
   const [formData, setFormData] = useState<UserCreate>({
     first_name: '',
     last_name: '',
     email: '',
     phone: '',
-    role: 'Viewer',
+    role: isSuperAdmin ? 'Org Admin' : 'Viewer',
     password: ''
   });
+
   
   const [autoGenerate, setAutoGenerate] = useState(true);
 
@@ -41,7 +46,9 @@ export function CreateUser() {
       const payload = { ...formData };
       let generatedPassword = null;
       if (autoGenerate) {
-        generatedPassword = Math.random().toString(36).slice(-10) + 'A!1';
+        const randomBuffer = new Uint32Array(2);
+        window.crypto.getRandomValues(randomBuffer);
+        generatedPassword = Array.from(randomBuffer, n => n.toString(36)).join('').slice(-10) + 'A!1';
         payload.password = generatedPassword;
       }
       
@@ -205,11 +212,12 @@ export function CreateUser() {
                 onChange={e => setFormData({...formData, role: e.target.value})}
                 className="w-full h-[48px] pl-10 pr-8 bg-white border border-[#DCE3EA] rounded-[10px] text-sm font-medium text-slate-900 appearance-none focus:border-[#2563EB] focus:ring-4 focus:ring-blue-50 outline-none transition-all cursor-pointer"
               >
-                <option value="Super Admin">Super Admin (Full Platform Control)</option>
+                {isSuperAdmin && (
+                  <option value="Super Admin">Super Admin (Full Platform Control)</option>
+                )}
                 <option value="Org Admin">Org Admin (Organization Manager)</option>
                 <option value="Operator">Operator (Device & Gateway Operator)</option>
                 <option value="Viewer">Viewer (Read-Only Access)</option>
-                <option value="Developer">Developer (API & Webhook Access)</option>
               </select>
               <ChevronDown className="absolute right-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
             </div>

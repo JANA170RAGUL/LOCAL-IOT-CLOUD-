@@ -2,8 +2,8 @@
 app/modules/telemetry/services/mqtt_listener.py
 
 MQTT Listener background process.
-Subscribes to device telemetry topics, validates incoming payloads,
-resolves gateway context from topic segments, and enqueues to Redis.
+Subscribes to authenticated device telemetry topics, validates incoming payloads,
+resolves gateway context from server DB, and enqueues to Redis.
 """
 
 import json
@@ -11,8 +11,14 @@ import logging
 import threading
 
 import paho.mqtt.client as mqtt
+from sqlalchemy import select
 
 from app.config.settings import settings
+from app.core.mqtt_client_factory import create_mqtt_client
+from app.database.session import SessionLocal
+from app.modules.devices.models.device import Device
+from app.modules.sensors.models.sensor import Sensor
+from app.modules.telemetry.services.mqtt_topic_parser import MqttTopicParser
 from app.modules.telemetry.services.payload_validator import PayloadValidator
 from app.modules.telemetry.services.queue_manager import QueueManager
 
@@ -22,16 +28,11 @@ logger = logging.getLogger(__name__)
 class MQTTListener:
     """
     Background subscriber service for the Mosquitto MQTT broker.
-    Listens on 'iot/{gateway}/{device}/telemetry' topics.
+    Listens on 'localiot/v1/devices/+/telemetry' topics with QoS 1.
     """
 
     def __init__(self):
-        self.client = mqtt.Client(client_id=settings.mqtt_client_id)
-        if settings.mqtt_username:
-            self.client.username_pw_set(
-                username=settings.mqtt_username,
-                password=settings.mqtt_password or None,
-            )
+        self.client = create_mqtt_client(client_id=settings.mqtt_client_id)
 
         # Configure callbacks
         self.client.on_connect = self._on_connect
@@ -44,11 +45,10 @@ class MQTTListener:
     def _on_connect(self, client, userdata, flags, rc):
         if rc == 0:
             logger.info("Successfully connected to MQTT Broker.")
-            # Subscribe to iot/{gateway_code}/{device_code}/telemetry
-            # '+' matches any single level wildcard
-            topic = "iot/+/+/telemetry"
-            self.client.subscribe(topic)
-            logger.info(f"Subscribed to topic pattern: {topic}")
+            # Subscribe to standardized telemetry topic with QoS 1
+            telemetry_topic = "localiot/v1/devices/+/telemetry"
+            self.client.subscribe(telemetry_topic, qos=1)
+            logger.info(f"Subscribed to topic pattern: {telemetry_topic} (QoS 1)")
         else:
             logger.error(f"MQTT connection failed with code: {rc}")
 
@@ -58,42 +58,85 @@ class MQTTListener:
     def _on_message(self, client, userdata, msg):
         """On receiving an ingestion payload."""
         try:
-            topic_parts = msg.topic.split("/")
-            if len(topic_parts) < 4:
+            # 1. Parse standardized MQTT topic
+            topic = MqttTopicParser.parse(msg.topic)
+            if topic.message_type != "telemetry":
                 return
 
-            gateway_ctx = topic_parts[1]
-            device_code_ctx = topic_parts[2]
+            raw_payload = json.loads(msg.payload.decode("utf-8"))
+            self.process_mqtt_telemetry(device_id=topic.device_id, payload=raw_payload)
 
-            payload_data = json.loads(msg.payload.decode("utf-8"))
+        except Exception as e:
+            logger.error(f"Failed processing MQTT telemetry payload on topic {msg.topic}: {e}")
 
-            # Enforce device identifier in payload if missing, fallback to topic segment
-            if "device" not in payload_data:
-                payload_data["device"] = device_code_ctx
+    @staticmethod
+    def process_mqtt_telemetry(*, device_id: str, payload: dict) -> bool:
+        """
+        Processes and validates MQTT telemetry using strict DB verification.
+        Closes DB session immediately when finished.
+        """
+        db = SessionLocal()
+        try:
+            # 1. Device MUST exist and be ACTIVE
+            device = db.get(Device, device_id)
+            if not device or device.status != "ACTIVE":
+                logger.warning(f"MQTT telemetry rejected: Device {device_id} not found or inactive.")
+                return False
 
-            # Enforce licensing limits (silently drop MQTT messages to avoid crashing loop)
+            # 2. Extract sensor code from payload
+            sensor_code = payload.get("sensor")
+            if not sensor_code:
+                logger.warning(f"MQTT telemetry rejected: Missing sensor code in payload for device {device_id}.")
+                return False
+
+            # 3. Sensor MUST belong to Device and be ACTIVE
+            sensor = db.scalar(
+                select(Sensor).where(
+                    Sensor.device_id == device.id,
+                    Sensor.code == sensor_code,
+                    Sensor.status == "ACTIVE",
+                )
+            )
+            if not sensor:
+                logger.warning(f"MQTT telemetry rejected: Unknown/inactive sensor '{sensor_code}' for device {device.id}.")
+                return False
+
+            # 4. Check license telemetry limits
             from app.database.redis import get_redis_client
             from app.modules.licensing.services.telemetry_limiter import check_telemetry_limits
             redis_client = get_redis_client()
             if not check_telemetry_limits(redis_client):
-                logger.warning(f"Dropped MQTT telemetry from {device_code_ctx}: License limit exceeded")
-                return
+                logger.warning(f"Dropped MQTT telemetry from device {device.id}: License limit exceeded.")
+                return False
 
-            # Validate structural shape
-            validated = PayloadValidator.validate(payload_data)
-
-            # Store gateway context inside payload envelope metadata
-            envelope = {
-                "payload": validated,
-                "gateway_ctx": gateway_ctx,
+            # 5. Build SERVER-TRUSTED payload (client cannot override device identity)
+            trusted_payload = {
+                "device": device.id,
+                "sensor": sensor.code,
+                "value": payload.get("value"),
+                "timestamp": payload.get("timestamp"),
             }
 
-            # Push directly to queue
-            QueueManager.enqueue(envelope)
-            logger.debug(f"Enqueued telemetry message from device: {validated['device']}")
+            # 6. Validate structural shape & data type
+            validated = PayloadValidator.validate(trusted_payload)
 
-        except Exception as e:
-            logger.error(f"Failed processing MQTT telemetry payload: {e}")
+            # 7. Store server-resolved gateway context in envelope
+            envelope = {
+                "payload": validated,
+                "gateway_ctx": device.gateway_id,
+                "source": "MQTT",
+            }
+
+            QueueManager.enqueue(envelope)
+            logger.debug(f"Enqueued MQTT telemetry from device {device.id}, sensor {sensor.code}")
+            return True
+
+        except Exception as err:
+            logger.exception(f"MQTT telemetry processing failed for device {device_id}: {err}")
+            return False
+
+        finally:
+            db.close()
 
     def start(self) -> None:
         """Start the listener in a background thread."""

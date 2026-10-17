@@ -11,12 +11,13 @@ export const PredictionWidget: React.FC<{ config: WidgetConfig }> = ({ config })
   const { data: telemetry } = useLatestTelemetryQuery(config.deviceId);
 
   const sensorReading = telemetry?.find((t: any) => t.sensor_code === config.sensorCode);
-  const currentValue = sensorReading?.value ?? (config as any).mockCurrent ?? 34.2;
+  const currentValue = sensorReading?.value ?? (config as any).currentValue;
   const unit = (config as any).unit || '°C';
-  const predictedValue = (config as any).mockPredicted ?? 36.5;
+  const predictedValue = (config as any).predictedValue;
   const timeHorizon = (config as any).timeHorizon || '30 min';
   
-  const isIncreasing = predictedValue > currentValue;
+  const hasPrediction = currentValue !== undefined && predictedValue !== undefined;
+  const isIncreasing = hasPrediction ? predictedValue > currentValue : false;
 
   return (
     <Box sx={{ height: '100%', p: 2, display: 'flex', flexDirection: 'column', bgcolor: 'background.paper' }}>
@@ -27,27 +28,37 @@ export const PredictionWidget: React.FC<{ config: WidgetConfig }> = ({ config })
         </Typography>
       </Box>
 
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="body2" color="text.secondary">Current Value:</Typography>
-        <Typography variant="h6">{currentValue}{unit}</Typography>
-      </Box>
-      
-      <Divider sx={{ mb: 2 }} />
-
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-        Prediction ({timeHorizon}):
-      </Typography>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Typography variant="h4" color="primary.main" sx={{ fontWeight: 'bold' }}>
-          {predictedValue}{unit}
-        </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', color: isIncreasing ? 'error.main' : 'success.main' }}>
-          {isIncreasing ? <TrendingUpIcon sx={{ mr: 0.5 }} /> : <TrendingDownIcon sx={{ mr: 0.5 }} />}
-          <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-            {isIncreasing ? 'Increasing' : 'Decreasing'}
+      {!hasPrediction ? (
+        <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#f8f9fa', p: 2, borderRadius: 1 }}>
+          <Typography variant="body2" color="text.secondary" align="center">
+            AI prediction model is not configured for this sensor.
           </Typography>
         </Box>
-      </Box>
+      ) : (
+        <>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="body2" color="text.secondary">Current Value:</Typography>
+            <Typography variant="h6">{currentValue}{unit}</Typography>
+          </Box>
+          
+          <Divider sx={{ mb: 2 }} />
+
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            Prediction ({timeHorizon}):
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Typography variant="h4" color="primary.main" sx={{ fontWeight: 'bold' }}>
+              {predictedValue}{unit}
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', color: isIncreasing ? 'error.main' : 'success.main' }}>
+              {isIncreasing ? <TrendingUpIcon sx={{ mr: 0.5 }} /> : <TrendingDownIcon sx={{ mr: 0.5 }} />}
+              <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                {isIncreasing ? 'Increasing' : 'Decreasing'}
+              </Typography>
+            </Box>
+          </Box>
+        </>
+      )}
     </Box>
   );
 };
@@ -69,8 +80,6 @@ export const PredictionWidgetManifest: WidgetManifest = {
   defaultConfig: {
     type: 'ai-prediction',
     title: 'Temperature Prediction',
-    mockCurrent: 34.2,
-    mockPredicted: 36.5,
     unit: '°C',
     timeHorizon: '30 min'
   }

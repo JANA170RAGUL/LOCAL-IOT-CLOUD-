@@ -21,6 +21,9 @@ from app.modules.dashboards.schemas.dashboard import (
 )
 from app.modules.dashboards.services.dashboard_service import DashboardService
 
+from app.core.access_scope import AccessScope, get_access_scope
+from app.core.tenant_guard import TenantGuard
+
 router = APIRouter(
     tags=["Dashboards"],
 )
@@ -38,7 +41,9 @@ def create_dashboard(
     payload: DashboardCreate,
     db: Session = Depends(get_db),
     svc: DashboardService = Depends(get_dashboard_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> DashboardResponse:
+    TenantGuard.project(db, project_id, scope)
     # License limit check
     current_count = db.query(Dashboard).filter(Dashboard.is_active == True).count()
     check_feature_limit("dashboards", current_count)
@@ -60,7 +65,9 @@ def list_dashboards(
     page_size: int = Query(DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE, alias="page_size", description="Items per page"),
     db: Session = Depends(get_db),
     svc: DashboardService = Depends(get_dashboard_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> DashboardListResponse:
+    TenantGuard.project(db, project_id, scope)
     filters = DashboardFilter(status=status_filter, search=search)
     total, items = svc.list_dashboards(db, project_id, filters, page, page_size)
     return DashboardListResponse(
@@ -81,7 +88,9 @@ def get_dashboard(
     dashboard_id: str,
     db: Session = Depends(get_db),
     svc: DashboardService = Depends(get_dashboard_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> DashboardResponse:
+    TenantGuard.dashboard(db, dashboard_id, scope)
     return svc.get_dashboard(db, dashboard_id)
 
 
@@ -96,7 +105,9 @@ def update_dashboard(
     payload: DashboardUpdate,
     db: Session = Depends(get_db),
     svc: DashboardService = Depends(get_dashboard_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> DashboardResponse:
+    TenantGuard.dashboard(db, dashboard_id, scope)
     return svc.update_dashboard(db, dashboard_id, payload)
 
 
@@ -110,5 +121,7 @@ def deactivate_dashboard(
     dashboard_id: str,
     db: Session = Depends(get_db),
     svc: DashboardService = Depends(get_dashboard_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> None:
+    TenantGuard.dashboard(db, dashboard_id, scope)
     svc.deactivate_dashboard(db, dashboard_id)

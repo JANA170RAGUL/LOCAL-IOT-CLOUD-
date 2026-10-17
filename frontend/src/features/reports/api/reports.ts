@@ -15,19 +15,21 @@ export interface ReportRequest {
     report_type: string;
     format?: string;
     filters?: ReportFilter;
+    email_to?: string;
 }
 
 export const reportsApi = {
     exportReport: async (request: ReportRequest): Promise<void> => {
-        const response = await apiClient.post(`/reports/export/${request.format}`, request, {
+        const queryparam = request.email_to ? `?email_to=${encodeURIComponent(request.email_to)}` : '';
+        const response = await apiClient.post(`/reports/export/${request.format}${queryparam}`, request, {
             responseType: 'blob'
         });
-        
+
         const blob = new Blob([response.data]);
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        
+
         const extension = request.format === 'excel' ? 'xlsx' : request.format;
         a.download = `${request.report_type}_report.${extension}`;
         document.body.appendChild(a);

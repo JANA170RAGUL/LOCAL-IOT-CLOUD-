@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Button, CircularProgress, Alert } from '@mui/material';
+import { Box, Button, CircularProgress, Alert, Typography } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Save as SaveIcon } from '@mui/icons-material';
 
 
@@ -17,6 +17,7 @@ import {
   useUpdateWidgetMutation,
   useDeleteWidgetMutation
 } from '../features/dashboard/hooks/useWidgets';
+import { createWidget } from '../features/dashboard/api/widget';
 import type { BackendWidget, WidgetCreatePayload, WidgetUpdatePayload } from '../features/dashboard/api/widget';
 import type { WidgetConfig } from '../features/dashboard/types';
 
@@ -33,6 +34,8 @@ export const DashboardBuilder: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingWidget, setEditingWidget] = useState<BackendWidget | null>(null);
+
+  const [editorError, setEditorError] = useState<string | null>(null);
 
   // Queries
   const { data: dashboards, isLoading: isDashboardsLoading } = useDashboardsQuery(selection.projectId || '');
@@ -88,6 +91,8 @@ export const DashboardBuilder: React.FC = () => {
   };
 
   const handleSaveWidget = (config: WidgetConfig) => {
+    setEditorError(null);
+
     // Map Frontend WidgetConfig to Backend Payload
     const payload: WidgetCreatePayload | WidgetUpdatePayload = {
       code: `wgt_${Date.now()}`,
@@ -111,14 +116,53 @@ export const DashboardBuilder: React.FC = () => {
       height: editingWidget ? editingWidget.height : 3,
     };
 
-    if (editingWidget) {
-      updateMutation.mutate({ widgetId: editingWidget.id, payload: payload as WidgetUpdatePayload });
-    } else {
-      createMutation.mutate(payload as WidgetCreatePayload);
+    if (!selectedDashboardId && !editingWidget) {
+      if (!selection.projectId) {
+        setEditorError('Please select Organization -> Tenant -> Project first.');
+        return;
+      }
+      // Auto-create a dashboard if none exists
+      const newCode = `dash_${Date.now()}`;
+      createDashboardMutation.mutate(
+        { code: newCode, name: 'Default Dashboard' },
+        {
+          onSuccess: (newDash) => {
+            setSelectedDashboardId(newDash.id);
+            createWidget(newDash.id, payload as WidgetCreatePayload)
+              .then(() => {
+                setEditorOpen(false);
+                setEditingWidget(null);
+                setEditorError(null);
+              })
+              .catch((err: any) => {
+                setEditorError(err.response?.data?.detail || err.message || 'Failed to save widget');
+              });
+          },
+          onError: (err: any) => {
+            setEditorError(err.response?.data?.detail || err.message || 'Failed to create dashboard');
+          }
+        }
+      );
+      return;
     }
-    
-    setEditorOpen(false);
-    setEditingWidget(null);
+
+    const options = {
+      onSuccess: () => {
+        setEditorOpen(false);
+        setEditingWidget(null);
+        setEditorError(null);
+      },
+      onError: (err: any) => {
+        const msg = err.response?.data?.detail || err.message || 'Failed to save widget';
+        setEditorError(msg);
+      }
+    };
+
+    if (editingWidget) {
+      updateMutation.mutate({ widgetId: editingWidget.id, payload: payload as WidgetUpdatePayload }, options);
+    } else {
+      createMutation.mutate(payload as WidgetCreatePayload, options);
+    }
   };
 
   const handleEditWidget = (widget: BackendWidget) => {
@@ -169,17 +213,15 @@ export const DashboardBuilder: React.FC = () => {
             >
               {isEditing ? 'Finish Editing' : 'Edit Layout'}
             </Button>
-            {isEditing && (
-              <Button
-                variant="contained"
-                color="secondary"
-                startIcon={<AddIcon />}
-                onClick={() => { setEditingWidget(null); setEditorOpen(true); }}
-                disabled={!selectedDashboardId}
-              >
-                Add Widget
-              </Button>
-            )}
+            <Button
+              variant="contained"
+              color="secondary"
+              startIcon={<AddIcon />}
+              onClick={() => { setEditingWidget(null); setEditorOpen(true); }}
+              disabled={!selection.projectId}
+            >
+              Add Widget
+            </Button>
           </Box>
         }
       />
@@ -189,6 +231,25 @@ export const DashboardBuilder: React.FC = () => {
       </Box>
 
       {selection.projectId && isDashboardsLoading && <CircularProgress size={24} />}
+
+      {selection.projectId && dashboards && dashboards.length > 1 && (
+        <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>
+            Select Dashboard:
+          </Typography>
+          <select
+            value={selectedDashboardId}
+            onChange={(e) => setSelectedDashboardId(e.target.value)}
+            className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {dashboards.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name} ({d.code})
+              </option>
+            ))}
+          </select>
+        </Box>
+      )}
       
       {selection.projectId && dashboards?.length === 0 && (
         <Alert 
@@ -199,7 +260,7 @@ export const DashboardBuilder: React.FC = () => {
             </Button>
           }
         >
-          No dashboards found in this project. Please create one first.
+          No dashboards found in this project. Click &quot;Add Widget&quot; or &quot;Create Dashboard&quot; to auto-generate one!
         </Alert>
       )}
 
@@ -223,8 +284,9 @@ export const DashboardBuilder: React.FC = () => {
       <WidgetEditor
         open={editorOpen}
         initialValues={mapToConfig(editingWidget)}
-        onClose={() => { setEditorOpen(false); setEditingWidget(null); }}
+        onClose={() => { setEditorOpen(false); setEditingWidget(null); setEditorError(null); }}
         onSave={handleSaveWidget}
+        error={editorError}
       />
     </Box>
   );

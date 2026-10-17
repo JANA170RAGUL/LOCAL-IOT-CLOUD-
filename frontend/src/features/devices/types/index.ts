@@ -35,12 +35,25 @@ export interface DeviceResponse extends DeviceBase {
   gateway_id: string;
   status: string;
   last_seen?: string;
+  api_key?: string;
   created_at: string;
   updated_at: string;
   is_active: boolean;
 }
 
 export type Device = DeviceResponse;
+
+export interface DeviceCredential {
+  id: string;
+  device_id: string;
+  key_id: string;
+  name: string;
+  created_at: string;
+  expires_at?: string;
+  is_active: boolean;
+  revoked_at?: string;
+  api_key?: string;
+}
 
 export interface DeviceSummary {
   id: string;

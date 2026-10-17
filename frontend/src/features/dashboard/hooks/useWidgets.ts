@@ -13,7 +13,12 @@ export const useWidgetsQuery = (dashboardId: string) => {
 export const useCreateWidgetMutation = (dashboardId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: WidgetCreatePayload) => createWidget(dashboardId, payload),
+    mutationFn: (payload: WidgetCreatePayload) => {
+      if (!dashboardId) {
+        return Promise.reject(new Error('No active dashboard selected. Please create or select a dashboard first.'));
+      }
+      return createWidget(dashboardId, payload);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['widgets', { dashboardId }] });
     },

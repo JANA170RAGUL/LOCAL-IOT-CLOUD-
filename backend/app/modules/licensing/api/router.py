@@ -2,152 +2,232 @@
 app/modules/licensing/api/router.py
 
 FastAPI router for the Licensing module.
-
-Mounted at: /api/v1/licensing
-
-License key management, feature flags, and usage metering.
+Mounted under /api/v1/licensing.
+Provides status evaluation, atomic license upload/replacement, and usage telemetry metering.
 """
 
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
+from __future__ import annotations
+
+import json
 from datetime import datetime, timezone
 
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from sqlalchemy.orm import Session
+
+from app.core.auth import get_current_user, require_permission
 from app.database.session import get_db
+from app.modules.licensing.crypto.verifier import verify_signature
+from app.modules.licensing.features import LicenseFeature
 from app.modules.licensing.models.license import License
-from app.modules.licensing.models.license_feature import LicenseFeature
 from app.modules.licensing.models.license_activation import LicenseActivation
+from app.modules.licensing.models.license_feature import LicenseFeature as DBLicenseFeature
 from app.modules.licensing.models.machine_fingerprint import MachineFingerprint
-from app.modules.licensing.validators.machine_validator import validate_machine
-from app.modules.licensing.services.feature_service import feature_service
+from app.modules.licensing.policy.models import LicenseRecordStatus
+from app.modules.licensing.schemas.license_file import SignedLicenseFile
 from app.modules.licensing.services.fingerprint_service import generate_fingerprint
+from app.modules.licensing.services.license_policy import license_policy
+from app.modules.licensing.services.license_usage import license_usage
+from app.modules.licensing.validators.machine_validator import validate_machine
+from app.modules.users.models.user import User
+
+LICENSE_UPLOAD_MAX_BYTES = 64 * 1024
 
 router = APIRouter(
-    prefix="/license",
+    prefix="/licensing",
     tags=["Licensing"],
 )
 
+
 @router.get("/status", summary="Get License Status")
 def get_license_status(db: Session = Depends(get_db)):
-    # Find the active license
-    license_obj = db.query(License).filter(License.status == "ACTIVE").first()
-    
-    if not license_obj:
-        return {
-            "status": "UNLICENSED",
-            "message": "No active license found on this platform."
-        }
-        
-    activation = db.query(LicenseActivation).filter(LicenseActivation.license_id == license_obj.id).first()
-    machine_match = False
-    if activation and activation.fingerprint:
-        machine_match = validate_machine(activation.fingerprint.fingerprint_hash)
-        
-    expires_in_days = -1
-    if license_obj.expires_at:
-        delta = license_obj.expires_at.replace(tzinfo=timezone.utc) - datetime.now(timezone.utc)
-        expires_in_days = delta.days
-        
-    current_machine_data = generate_fingerprint()
+    """
+    Returns public-safe license evaluation status, plan, expiry, and grace dates.
+    Available in RESTRICTED / UNLICENSED mode.
+    """
+    snapshot = license_policy.get_snapshot(db)
     return {
-        "customer": license_obj.customer_name if license_obj else None,
-        "plan": license_obj.plan if license_obj else None,
-        "status": license_obj.status if license_obj else "UNLICENSED",
-        "expires_in_days": expires_in_days,
-        "machine_match": machine_match,
-        "features_loaded": len(feature_service.features) if feature_service.features else 0,
-        "current_fingerprint": current_machine_data["fingerprint_hash"],
-        "activated_at": activation.activated_at.isoformat() if activation and activation.activated_at else None,
-        "features": feature_service.features
+        "mode": snapshot.mode.value,
+        "license_id": snapshot.license_id,
+        "plan": snapshot.plan,
+        "expires_at": snapshot.expires_at.isoformat() if snapshot.expires_at else None,
+        "grace_ends_at": snapshot.grace_ends_at.isoformat() if snapshot.grace_ends_at else None,
+        "reason": snapshot.reason,
+        "features": snapshot.features,
     }
 
-from fastapi import UploadFile, File, HTTPException
-from app.modules.licensing.services.license_parser import parse_and_validate_license
-from app.modules.licensing.models.machine_fingerprint import MachineFingerprint
+
+@router.get("/machine-code", summary="Get Machine Code")
+def get_machine_code(current_user: User = Depends(require_permission("system:admin"))):
+    """
+    Returns derived machine fingerprint hash for license generation.
+    Requires Super Admin permission.
+    """
+    fingerprint = generate_fingerprint()
+    return {
+        "machine_code": fingerprint["fingerprint_hash"],
+        "algorithm": "localiot-machine-v1",
+    }
+
+
+@router.get("/usage", summary="Get License Usage Metrics")
+def get_license_usage(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission("system:admin")),
+):
+    """
+    Returns consumed versus licensed capacity for Super Admin.
+    """
+    snapshot = license_policy.get_snapshot(db)
+    features = snapshot.features
+
+    def _capacity_dict(feat: LicenseFeature, count: int) -> dict:
+        limit = features.get(feat.value, 0)
+        return {
+            "used": count,
+            "limit": limit if isinstance(limit, int) else 0,
+        }
+
+    return {
+        "mode": snapshot.mode.value,
+        "organizations": _capacity_dict(LicenseFeature.ORGANIZATIONS, license_usage.count_organizations(db)),
+        "users": _capacity_dict(LicenseFeature.USERS, license_usage.count_users(db)),
+        "gateways": _capacity_dict(LicenseFeature.GATEWAYS, license_usage.count_gateways(db)),
+        "devices": _capacity_dict(LicenseFeature.DEVICES, license_usage.count_devices(db)),
+        "dashboards": _capacity_dict(LicenseFeature.DASHBOARDS, license_usage.count_dashboards(db)),
+        "widgets": _capacity_dict(LicenseFeature.WIDGETS, license_usage.count_widgets(db)),
+        "channels": _capacity_dict(LicenseFeature.CHANNELS, license_usage.count_channels(db)),
+        "telemetry_rate": {
+            "limit_per_second": features.get(LicenseFeature.TELEMETRY_RATE.value, 0),
+        },
+        "flags": {
+            "analytics": bool(features.get(LicenseFeature.ANALYTICS.value, False)),
+            "reports": bool(features.get(LicenseFeature.REPORTS.value, False)),
+            "remote_commands": bool(features.get(LicenseFeature.REMOTE_COMMANDS.value, False)),
+            "ai": bool(features.get(LicenseFeature.AI.value, False)),
+        },
+    }
+
 
 @router.post("/upload", summary="Upload and Activate License")
-async def upload_license(file: UploadFile = File(...), db: Session = Depends(get_db)):
-    if not file.filename.endswith('.lic'):
-        raise HTTPException(status_code=400, detail="Must be a .lic file")
-        
-    content = await file.read()
-    raw_str = content.decode('utf-8')
-    
-    # 1. Parse and Validate RSA Signature + Structure
-    license_data = parse_and_validate_license(raw_str)
-    
-    # 2. Check Machine Fingerprint
-    expected_machine = license_data.get("machine")
-    current_machine_data = generate_fingerprint()
-    if expected_machine != current_machine_data["fingerprint_hash"]:
-        raise HTTPException(status_code=403, detail="License is bound to a different machine fingerprint.")
-        
-    # 3. Deactivate current active license
-    existing_active = db.query(License).filter(License.status == "ACTIVE").all()
-    for el in existing_active:
-        el.status = "Replaced"
-        
-    # 4. Save new Machine Fingerprint if it doesn't exist
-    fingerprint_record = db.query(MachineFingerprint).filter(MachineFingerprint.fingerprint_hash == current_machine_data["fingerprint_hash"]).first()
-    if not fingerprint_record:
-        fingerprint_record = MachineFingerprint(
-            cpu_id=current_machine_data["cpu_id"],
-            motherboard_serial=current_machine_data["motherboard_serial"],
-            disk_serial=current_machine_data["disk_serial"],
-            mac_address=current_machine_data["mac_address"],
-            os_uuid=current_machine_data["os_uuid"],
-            fingerprint_hash=current_machine_data["fingerprint_hash"]
+async def upload_license(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission("system:admin")),
+):
+    """
+    Atomically uploads and activates a vendor-signed .lic file.
+    Requires Super Admin permission. Allowed in RESTRICTED / UNLICENSED mode.
+    """
+    if not file.filename or not file.filename.endswith(".lic"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File must have a .lic extension.",
         )
-        db.add(fingerprint_record)
-        db.flush() # get ID
-        
-    # 5. Insert new License
-    expires_str = license_data["expires"]
-    if "T" not in expires_str:
-        expires_str += "T23:59:59Z"
-    expires_at = datetime.fromisoformat(expires_str.replace("Z", "+00:00"))
-    
-    new_license = License(
-        customer_name=license_data["customer"],
-        license_key=license_data["license_key"],
-        plan=license_data["plan"],
-        status="ACTIVE",
-        expires_at=expires_at,
-        raw_license_file=raw_str,
-        signature=license_data["signature"]
-    )
-    db.add(new_license)
-    db.flush()
-    
-    # 6. Insert Features
-    feature_dict = {}
-    for k, v in license_data.get("features", {}).items():
-        feat = LicenseFeature(
+
+    content = await file.read(LICENSE_UPLOAD_MAX_BYTES + 1)
+    if len(content) > LICENSE_UPLOAD_MAX_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"License file exceeds maximum allowed size ({LICENSE_UPLOAD_MAX_BYTES} bytes).",
+        )
+
+    try:
+        raw_str = content.decode("utf-8")
+        raw_dict = json.loads(raw_str)
+        signed_file = SignedLicenseFile.model_validate(raw_dict)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid license file schema: {exc}",
+        )
+
+    # 1. Verify RSA Signature using public.pem
+    payload = raw_dict.copy()
+    sig = payload.pop("signature", "")
+    if not verify_signature(payload, sig):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="License signature validation failed! Tampered payload or invalid key.",
+        )
+
+    # 2. Check Machine Binding
+    current_machine = generate_fingerprint()
+    if signed_file.machine != current_machine["fingerprint_hash"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="License machine code does not match this server environment.",
+        )
+
+    # 3. Atomic Replacement in DB Transaction
+    try:
+        # Mark previous active licenses as REPLACED
+        existing_active = db.query(License).filter(License.status == LicenseRecordStatus.ACTIVE.value).all()
+        for old in existing_active:
+            old.status = LicenseRecordStatus.REPLACED.value
+
+        # Machine Fingerprint record
+        fp_rec = db.query(MachineFingerprint).filter(
+            MachineFingerprint.fingerprint_hash == current_machine["fingerprint_hash"]
+        ).first()
+        if not fp_rec:
+            fp_rec = MachineFingerprint(
+                cpu_id=current_machine["cpu_id"],
+                motherboard_serial=current_machine["motherboard_serial"],
+                disk_serial=current_machine["disk_serial"],
+                mac_address=current_machine["mac_address"],
+                os_uuid=current_machine["os_uuid"],
+                fingerprint_hash=current_machine["fingerprint_hash"],
+            )
+            db.add(fp_rec)
+            db.flush()
+
+        # Insert new License
+        new_license = License(
+            customer_name=signed_file.customer,
+            license_key=signed_file.license_id,
+            plan=signed_file.plan,
+            status=LicenseRecordStatus.ACTIVE.value,
+            expires_at=signed_file.expires_at,
+            raw_license_file=raw_str,
+            signature=signed_file.signature,
+        )
+        db.add(new_license)
+        db.flush()
+
+        # Insert features
+        for k, v in signed_file.features.items():
+            feat = DBLicenseFeature(
+                license_id=new_license.id,
+                feature_key=k,
+            )
+            if isinstance(v, bool):
+                feat.feature_value_bool = v
+            elif isinstance(v, int):
+                feat.feature_value_int = v
+            db.add(feat)
+
+        # Insert activation record
+        activation = LicenseActivation(
             license_id=new_license.id,
-            feature_key=k,
+            fingerprint_id=fp_rec.id,
+            activated_at=datetime.now(timezone.utc),
         )
-        if isinstance(v, bool):
-            feat.feature_value_bool = v
-            feature_dict[k] = v
-        elif isinstance(v, int):
-            feat.feature_value_int = v
-            feature_dict[k] = v
-        db.add(feat)
-        
-    # 7. Insert Activation
-    activation = LicenseActivation(
-        license_id=new_license.id,
-        fingerprint_id=fingerprint_record.id,
-        activated_at=datetime.now(timezone.utc)
-    )
-    db.add(activation)
-    
-    db.commit()
-    
-    # 8. Reload Features into memory
-    feature_service.load_features(feature_dict)
-    
+        db.add(activation)
+
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to persist replacement license: {exc}",
+        )
+
+    # Invalidate process-local policy cache
+    license_policy.invalidate()
+
     return {
         "message": "License uploaded and activated successfully.",
+        "license_id": new_license.license_key,
         "customer": new_license.customer_name,
-        "plan": new_license.plan
+        "plan": new_license.plan,
     }

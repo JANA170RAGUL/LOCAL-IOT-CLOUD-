@@ -15,10 +15,10 @@ def setup_environment():
     pub_path = os.path.join(base_dir, "keys", "public.pem")
 
     if not os.path.exists(priv_path) or not os.path.exists(pub_path):
-        print("Generating new RSA keys...")
+        print("Generating new 3072-bit RSA keys...")
         private_key = rsa.generate_private_key(
             public_exponent=65537,
-            key_size=2048,
+            key_size=3072,
             backend=default_backend()
         )
         
@@ -35,22 +35,23 @@ def setup_environment():
                 encoding=serialization.Encoding.PEM,
                 format=serialization.PublicFormat.SubjectPublicKeyInfo
             ))
-        print("RSA keys generated and saved.")
+        print("3072-bit RSA keys generated and saved.")
         
-        # Copy public key to the backend for testing purposes
+        # Copy public key ONLY to the backend
         backend_keys_dir = os.path.abspath(os.path.join(base_dir, "../../backend/app/modules/licensing/crypto/keys"))
         os.makedirs(backend_keys_dir, exist_ok=True)
         backend_pub_path = os.path.join(backend_keys_dir, "public.pem")
         backend_priv_path = os.path.join(backend_keys_dir, "private.pem")
         
-        # Copy both so backend signature verification will work properly if it needs private (it shouldn't, but rsa_keys.py expects both to be generated together)
         with open(backend_pub_path, "wb") as f:
             with open(pub_path, "rb") as pf:
                 f.write(pf.read())
-        with open(backend_priv_path, "wb") as f:
-            with open(priv_path, "rb") as pf:
-                f.write(pf.read())
-        print("Copied keys to backend for synced testing.")
+        
+        if os.path.exists(backend_priv_path):
+            os.remove(backend_priv_path)
+            print("Removed private key from backend directory.")
+            
+        print("Copied public key to backend for license verification.")
     else:
         print("Keys already exist.")
 

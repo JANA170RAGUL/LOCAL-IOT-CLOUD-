@@ -143,7 +143,7 @@ class SensorService(BaseService[Sensor, SensorRepository]):
             device_id=device_id,
             keyword=filters.search,
             status=filters.status,
-            sensor_type=filters.sensor_type.value if filters.sensor_type else None,
+            sensor_type=filters.sensor_type if filters.sensor_type else None,
             page=filters.page,
             page_size=filters.page_size,
         )

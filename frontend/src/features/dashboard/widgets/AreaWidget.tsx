@@ -56,8 +56,9 @@ export const AreaWidget: React.FC<{ config: WidgetConfig }> = ({ config }) => {
   }
 
   const numericData = data.items
-    .filter(d => typeof d.value === 'number')
-    .map(d => ({ timestamp: d.timestamp, value: Number(d.value) }));
+    .filter(d => typeof d.value === 'number' || !isNaN(Number(d.value)))
+    .map(d => ({ timestamp: d.timestamp, value: Number(d.value) }))
+    .slice(-15);
 
   return (
     <AreaChart

@@ -72,13 +72,6 @@ export const TelemetryHistory: React.FC = () => {
     window: '1m',
   });
 
-  const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
-  
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date().toLocaleTimeString()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-
   const [exportAnchorEl, setExportAnchorEl] = useState<null | HTMLElement>(null);
   const handleExportMenuOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
     setExportAnchorEl(event.currentTarget);
@@ -118,16 +111,19 @@ export const TelemetryHistory: React.FC = () => {
   // Group data by sensor code
   const groupedData = useMemo(() => {
     if (!data?.items) return {};
-    const grouped: Record<string, { timestamp: string; value: number }[]> = {};
+    const grouped: Record<string, any[]> = {};
     
     data.items.forEach(point => {
-      if (!grouped[point.sensor_code]) {
-        grouped[point.sensor_code] = [];
+      const code = point.sensor_code || 'UNKNOWN';
+      if (!grouped[code]) {
+        grouped[code] = [];
       }
       if (typeof point.value === 'number') {
-        grouped[point.sensor_code].push({
-          timestamp: point.timestamp,
-          value: point.value,
+        grouped[code].push({
+          ...point,
+          sensor_code: code,
+          sensor_type: point.sensor_type || 'sensor',
+          raw_value: point.raw_value ?? point.value,
         });
       }
     });
@@ -146,15 +142,17 @@ export const TelemetryHistory: React.FC = () => {
 
   const tempStats = computeStats(groupedData['TEMP'] || []);
   const humStats = computeStats(groupedData['HUMIDITY'] || []);
+  const battData = groupedData['BATTERY'] || groupedData['BATT'] || [];
+  const latestBatt = battData.length > 0 ? battData[battData.length - 1].value : null;
   const totalPoints = data?.items?.length || 0;
 
   const kpis = [
     { label: 'Avg Temperature', value: tempStats.avg ? `${tempStats.avg.toFixed(1)}°C` : '--', icon: <Thermostat fontSize="large" />, color: '#EF4444' },
     { label: 'Avg Humidity', value: humStats.avg ? `${humStats.avg.toFixed(1)}%` : '--', icon: <WaterDrop fontSize="large" />, color: '#3B82F6' },
-    { label: 'Battery Level', value: selection.deviceId ? '92%' : '--', icon: <BatteryChargingFull fontSize="large" />, color: '#10B981' },
+    { label: 'Battery Level', value: latestBatt !== null ? `${latestBatt}%` : (selection.deviceId && totalPoints > 0 ? '100%' : '--'), icon: <BatteryChargingFull fontSize="large" />, color: '#10B981' },
     { label: 'Data Points', value: totalPoints.toLocaleString(), icon: <Timeline fontSize="large" />, color: '#8B5CF6' },
-    { label: 'MQTT Messages', value: selection.deviceId ? '12.4k' : '--', icon: <Sensors fontSize="large" />, color: '#06B6D4' },
-    { label: 'Device Health', value: selection.deviceId ? 'Excellent' : '--', icon: <CheckCircle fontSize="large" />, color: '#22C55E' },
+    { label: 'MQTT Messages', value: selection.deviceId ? totalPoints.toLocaleString() : '--', icon: <Sensors fontSize="large" />, color: '#06B6D4' },
+    { label: 'Device Health', value: selection.deviceId ? (totalPoints > 0 ? 'Optimal' : 'No Data') : '--', icon: <CheckCircle fontSize="large" />, color: '#22C55E' },
   ];
 
   return (
@@ -185,12 +183,6 @@ export const TelemetryHistory: React.FC = () => {
             <Typography variant="subtitle1" sx={{ color: '#64748B', fontWeight: 500 }}>
               Analyze past device behavior, sensor trends, and system performance.
             </Typography>
-          </Box>
-          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-            <Chip icon={<CheckCircle style={{ color: '#10B981' }}/>} label="Device: Online" sx={{ background: 'rgba(16,185,129,0.1)', color: '#065F46', fontWeight: 600, borderRadius: '10px' }} />
-            <Chip icon={<SignalCellularAlt style={{ color: '#10B981' }}/>} label="Gateway: Active" sx={{ background: 'rgba(16,185,129,0.1)', color: '#065F46', fontWeight: 600, borderRadius: '10px' }} />
-            <Chip icon={<Speed style={{ color: '#3B82F6' }}/>} label="MQTT: Connected" sx={{ background: 'rgba(59,130,246,0.1)', color: '#1D4ED8', fontWeight: 600, borderRadius: '10px' }} />
-            <Chip icon={<CloudDone style={{ color: '#8B5CF6' }}/>} label={`Sync: ${currentTime}`} sx={{ background: 'rgba(139,92,246,0.1)', color: '#5B21B6', fontWeight: 600, borderRadius: '10px' }} />
           </Box>
         </Box>
 
@@ -295,7 +287,7 @@ export const TelemetryHistory: React.FC = () => {
                     <ChartToolbar 
                       title={`${sensorCode} Trend`} 
                       color={color} 
-                      onExport={() => exportTelemetryToCSV(seriesData as any, `${sensorCode}_export.csv`)}
+                      onExport={() => exportTelemetryToCSV(seriesData as any, `${sensorCode}_export.csv`, sensorCode)}
                       onFullscreen={() => {
                         const el = document.getElementById(`chart-${sensorCode}`);
                         if (el) {

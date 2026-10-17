@@ -1,5 +1,7 @@
 import React from 'react';
 import { useTheme } from '@mui/material/styles';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
 import GridOnIcon from '@mui/icons-material/GridOn';
 import { EChartBase } from '../../../../components/charts/EChartBase';
 import type { WidgetConfig } from '../../types';
@@ -11,13 +13,13 @@ export const HeatmapWidget: React.FC<{ config: WidgetConfig }> = ({ config }) =>
   const hours = ['12a', '1a', '2a', '3a', '4a', '5a', '6a', '7a', '8a', '9a', '10a', '11a'];
   const days = ['Saturday', 'Friday', 'Thursday', 'Wednesday', 'Tuesday', 'Monday', 'Sunday'];
   
-  // Random data [x, y, value]
-  const data = [];
-  for (let i = 0; i < hours.length; i++) {
-    for (let j = 0; j < days.length; j++) {
-      data.push([i, j, Math.floor(Math.random() * 10)]);
-    }
-  }
+  // Real data array [x, y, value] provided via config or zero initialized
+  const rawData: Array<[number, number, number]> = (config as any).heatmapData || [];
+  const hasData = rawData.length > 0;
+
+  const data: Array<[number, number, number]> = hasData
+    ? rawData
+    : hours.flatMap((_, i) => days.map((_, j) => [i, j, 0] as [number, number, number]));
 
   const option = {
     tooltip: { position: 'top' },
@@ -36,7 +38,7 @@ export const HeatmapWidget: React.FC<{ config: WidgetConfig }> = ({ config }) =>
     },
     visualMap: {
       min: 0,
-      max: 10,
+      max: hasData ? Math.max(...data.map(d => d[2]), 10) : 10,
       calculable: true,
       orient: 'horizontal',
       left: 'center',
@@ -48,7 +50,7 @@ export const HeatmapWidget: React.FC<{ config: WidgetConfig }> = ({ config }) =>
         name: config.title || 'Heatmap',
         type: 'heatmap',
         data: data,
-        label: { show: true, color: 'white' },
+        label: { show: hasData, color: 'white' },
         emphasis: {
           itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0, 0, 0, 0.5)' }
         }
@@ -56,7 +58,29 @@ export const HeatmapWidget: React.FC<{ config: WidgetConfig }> = ({ config }) =>
     ]
   };
 
-  return <EChartBase option={option} height="100%" />;
+  return (
+    <Box sx={{ width: '100%', height: '100%', position: 'relative' }}>
+      {!hasData && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            zIndex: 10,
+            backgroundColor: 'rgba(0,0,0,0.6)',
+            px: 1,
+            py: 0.5,
+            borderRadius: 1,
+          }}
+        >
+          <Typography variant="caption" color="text.secondary">
+            No telemetry available
+          </Typography>
+        </Box>
+      )}
+      <EChartBase option={option} height="100%" />
+    </Box>
+  );
 };
 
 export const HeatmapWidgetManifest: WidgetManifest = {

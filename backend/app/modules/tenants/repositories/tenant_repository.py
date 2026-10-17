@@ -63,7 +63,7 @@ class TenantRepository(BaseRepository[Tenant]):
                 Tenant.code == code,
             )
         )
-        return db.scalar(stmt) > 0
+        return (db.scalar(stmt) or 0) > 0
 
     def exists_by_email(
         self,
@@ -82,7 +82,7 @@ class TenantRepository(BaseRepository[Tenant]):
         )
         if exclude_id:
             stmt = stmt.where(Tenant.id != exclude_id)
-        return db.scalar(stmt) > 0
+        return (db.scalar(stmt) or 0) > 0
 
     # ── Filtered + paginated list ─────────────────────────────────────────────
 
@@ -94,16 +94,21 @@ class TenantRepository(BaseRepository[Tenant]):
         status: str | None = None,
         page: int = 1,
         page_size: int = 20,
+        allowed_tenant_id: str | None = None,
     ) -> tuple[list[Tenant], int]:
         """
         Return a paginated list of tenants belonging to an organization.
 
-        keyword  — LIKE search across name, code, and email
-        status   — exact match on the status column (e.g. "ACTIVE")
+        keyword           — LIKE search across name, code, and email
+        status            — exact match on the status column (e.g. "ACTIVE")
+        allowed_tenant_id — restrict list to a single tenant ID if set
         """
         stmt = select(Tenant).where(
             Tenant.organization_id == organization_id
         )
+
+        if allowed_tenant_id:
+            stmt = stmt.where(Tenant.id == allowed_tenant_id)
 
         if keyword:
             pattern = f"%{keyword}%"
@@ -120,7 +125,7 @@ class TenantRepository(BaseRepository[Tenant]):
 
         # Count before pagination
         count_stmt = select(func.count()).select_from(stmt.subquery())
-        total: int = db.scalar(count_stmt)
+        total: int = db.scalar(count_stmt) or 0
 
         stmt = (
             stmt

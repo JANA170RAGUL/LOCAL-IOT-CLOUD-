@@ -88,3 +88,11 @@ Thumbs.db
 # ---------------------------------------------------------------------------
 # Keep migrations tracked; ignore local override files
 alembic/versions/__pycache__/
+
+# Licensing private keys
+**/private.pem
+**/*.key
+
+# Generated customer licenses
+vendor-tools/license-generator/output/*.lic
+vendor-tools/license-generator/output/archive.json

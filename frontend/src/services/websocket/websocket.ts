@@ -1,7 +1,9 @@
+import api from '../api/axios';
+import { getWebSocketBaseUrl } from '../../config/api';
 import { ReconnectionManager } from './reconnect';
 import { SubscriptionManager } from './subscriptions';
 
-const WS_BASE_URL = import.meta.env.VITE_WS_API_URL || 'ws://localhost:8000';
+const WS_BASE_URL = getWebSocketBaseUrl();
 
 class WebSocketManager {
   private sockets: Map<string, WebSocket> = new Map();
@@ -9,24 +11,33 @@ class WebSocketManager {
   public subscriptions: SubscriptionManager = new SubscriptionManager();
 
   /**
-   * Connects to a specific telemetry stream endpoint.
+   * Connects to a specific telemetry stream endpoint with a fresh WebSocket ticket.
    */
   public connectTelemetry(deviceId: string) {
-    const url = `${WS_BASE_URL}/devices/${deviceId}/telemetry/stream`;
     const topic = `telemetry:stream:${deviceId}`;
-    this._ensureConnection(topic, url);
+    const getUrl = async () => {
+      try {
+        const res = await api.post('/telemetry/ws-ticket', { sensor_id: deviceId });
+        const ticket = res.data.ticket;
+        return `${WS_BASE_URL}/devices/${deviceId}/telemetry/stream?ticket=${encodeURIComponent(ticket)}`;
+      } catch (err) {
+        console.error(`[WS] Failed to obtain WS ticket for telemetry stream ${deviceId}`, err);
+        return `${WS_BASE_URL}/devices/${deviceId}/telemetry/stream`;
+      }
+    };
+    this._ensureConnection(topic, getUrl);
   }
 
   /**
    * Connects to a specific alerts stream endpoint.
    */
   public connectAlerts(projectId: string) {
-    const url = `${WS_BASE_URL}/projects/${projectId}/alerts/stream`;
     const topic = `alerts:stream:${projectId}`;
-    this._ensureConnection(topic, url);
+    const getUrl = async () => `${WS_BASE_URL}/projects/${projectId}/alerts/stream`;
+    this._ensureConnection(topic, getUrl);
   }
 
-  private _ensureConnection(topic: string, url: string) {
+  private _ensureConnection(topic: string, getUrl: () => Promise<string>) {
     if (this.sockets.has(topic)) {
       return;
     }
@@ -35,11 +46,12 @@ class WebSocketManager {
       this.reconnectManagers.set(topic, new ReconnectionManager());
     }
 
-    this._connectInternal(topic, url);
+    this._connectInternal(topic, getUrl);
   }
 
-  private _connectInternal(topic: string, url: string) {
-    console.log(`[WS] Connecting to ${topic}...`);
+  private async _connectInternal(topic: string, getUrl: () => Promise<string>) {
+    console.log(`[WS] Obtaining ticket and connecting to ${topic}...`);
+    const url = await getUrl();
     const ws = new WebSocket(url);
     this.sockets.set(topic, ws);
 
@@ -51,7 +63,6 @@ class WebSocketManager {
 
     ws.onmessage = (event) => {
       try {
-        // Backend currently sends raw JSON text from Redis
         const data = JSON.parse(event.data);
         this.subscriptions.publish(topic, data);
       } catch (e) {
@@ -63,18 +74,16 @@ class WebSocketManager {
       console.warn(`[WS] Disconnected from ${topic}`, event.code, event.reason);
       this.sockets.delete(topic);
 
-      // Attempt reconnection if we still have listeners for this topic
       if (this.subscriptions.hasTopic(topic)) {
         const rm = this.reconnectManagers.get(topic);
         if (rm) {
-          rm.schedule(() => this._connectInternal(topic, url));
+          rm.schedule(() => this._connectInternal(topic, getUrl));
         }
       }
     };
 
     ws.onerror = (error) => {
       console.error(`[WS] Error on ${topic}`, error);
-      // onclose will trigger right after and handle reconnect
     };
   }
 

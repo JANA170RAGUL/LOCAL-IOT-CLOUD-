@@ -57,7 +57,9 @@ export const BarWidget: React.FC<{ config: WidgetConfig }> = ({ config }) => {
     );
   }
 
-  const numericData = data.items.filter(d => typeof d.value === 'number');
+  const numericData = data.items
+    .filter(d => typeof d.value === 'number' || !isNaN(Number(d.value)))
+    .slice(-15);
   const categories = numericData.map(d => dayjs(d.timestamp).format('HH:mm'));
   const values = numericData.map(d => Number(d.value));
 

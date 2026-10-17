@@ -67,7 +67,8 @@ def create_organization(
     current_count = db.query(Organization).filter(Organization.is_active == True).count()
     check_feature_limit("organizations", current_count)
 
-    return svc.create(db, payload)
+    res = svc.create(db, payload)
+    return OrganizationResponse.model_validate(res)
 
 @router.post(
     "/onboard",
@@ -162,6 +163,10 @@ def list_organizations(
 
 
 # ---------------------------------------------------------------------------
+from app.core.access_scope import AccessScope, get_access_scope
+from app.core.tenant_guard import TenantGuard
+
+# ---------------------------------------------------------------------------
 # GET /organizations/{org_id}
 # ---------------------------------------------------------------------------
 
@@ -175,8 +180,11 @@ def get_organization(
     org_id: str,
     db: Session = Depends(get_db),
     svc: OrganizationService = Depends(get_org_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> OrganizationResponse:
-    return svc.get_by_id(db, org_id)
+    TenantGuard.organization(db, org_id, scope)
+    res = svc.get_by_id(db, org_id)
+    return OrganizationResponse.model_validate(res)
 
 
 # ---------------------------------------------------------------------------
@@ -194,8 +202,11 @@ def update_organization(
     payload: OrganizationUpdate,
     db: Session = Depends(get_db),
     svc: OrganizationService = Depends(get_org_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> OrganizationResponse:
-    return svc.update(db, org_id, payload)
+    TenantGuard.organization(db, org_id, scope)
+    res = svc.update(db, org_id, payload)
+    return OrganizationResponse.model_validate(res)
 
 
 from app.core.auth import require_permission
@@ -219,5 +230,7 @@ def delete_organization(
     org_id: str,
     db: Session = Depends(get_db),
     svc: OrganizationService = Depends(get_org_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> dict:
+    TenantGuard.organization(db, org_id, scope)
     return svc.delete(db, org_id)

@@ -223,8 +223,20 @@ export const AlertCenter: React.FC = () => {
                 <Typography variant="h6" sx={{ fontWeight: 700, color: '#1E293B', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                   <ErrorOutlined color="warning" /> Severity Distribution
                 </Typography>
-                <Box sx={{ height: 250 }}>
-                  <EChartBase option={pieChartOption} height={250} />
+                <Box sx={{ height: 250, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {((alertStats?.critical ?? 0) + (alertStats?.warning ?? 0)) > 0 ? (
+                    <EChartBase option={pieChartOption} height={250} />
+                  ) : (
+                    <Box sx={{ textAlign: 'center', py: 3 }}>
+                      <CheckCircle sx={{ fontSize: 44, color: '#10B981', mb: 1, opacity: 0.9 }} />
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>
+                        No Active Alerts
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: '#94A3B8', display: 'block', mt: 0.5 }}>
+                        0 Critical &bull; 0 Warning
+                      </Typography>
+                    </Box>
+                  )}
                 </Box>
               </GlassCard>
             </Grid>

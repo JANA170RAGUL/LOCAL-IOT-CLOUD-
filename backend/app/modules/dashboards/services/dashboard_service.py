@@ -20,6 +20,11 @@ from app.modules.dashboards.schemas.dashboard import (
 )
 
 
+from app.modules.licensing.features import LicenseFeature
+from app.modules.licensing.services.license_policy import license_policy
+from app.modules.licensing.services.license_usage import license_usage
+
+
 class DashboardService(BaseService[Dashboard, DashboardRepository]):
 
     def __init__(self, repository: DashboardRepository):
@@ -33,6 +38,14 @@ class DashboardService(BaseService[Dashboard, DashboardRepository]):
         schema: DashboardCreate,
     ) -> Dashboard:
         """Create a new dashboard under an active project."""
+        snapshot = license_policy.get_snapshot(db)
+        current_count = license_usage.count_dashboards(db)
+        license_policy.ensure_capacity(
+            snapshot,
+            LicenseFeature.DASHBOARDS,
+            current_count=current_count,
+        )
+
         # 1. Verify project exists and is active
         project = db.scalar(select(Project).where(Project.id == project_id))
         if not project or not project.is_active:

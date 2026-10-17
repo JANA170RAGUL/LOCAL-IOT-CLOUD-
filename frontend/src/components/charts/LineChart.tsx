@@ -33,6 +33,7 @@ export const LineChart: React.FC<LineChartProps> = ({
     title: title ? { text: title, left: 'center' } : undefined,
     tooltip: {
       trigger: 'axis',
+      confine: true,
       valueFormatter: (value: any) => `${value} ${unit}`,
     },
     xAxis: {

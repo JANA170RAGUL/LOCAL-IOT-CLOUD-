@@ -36,6 +36,11 @@ from app.shared.services.base_service import BaseService
 logger = logging.getLogger(__name__)
 
 
+from app.modules.licensing.features import LicenseFeature
+from app.modules.licensing.services.license_policy import license_policy
+from app.modules.licensing.services.license_usage import license_usage
+
+
 class GatewayService(BaseService[Gateway, GatewayRepository]):
 
     def __init__(self):
@@ -57,6 +62,14 @@ class GatewayService(BaseService[Gateway, GatewayRepository]):
         Raises:
             GatewayCodeTaken — if code already used within this project
         """
+        snapshot = license_policy.get_snapshot(db)
+        current_count = license_usage.count_gateways(db)
+        license_policy.ensure_capacity(
+            snapshot,
+            LicenseFeature.GATEWAYS,
+            current_count=current_count,
+        )
+
         if self.repository.exists_by_code(db, project_id, payload.code):
             raise GatewayCodeTaken()
 

@@ -19,6 +19,11 @@ from app.modules.widgets.schemas.widget import (
 )
 
 
+from app.modules.licensing.features import LicenseFeature
+from app.modules.licensing.services.license_policy import license_policy
+from app.modules.licensing.services.license_usage import license_usage
+
+
 class WidgetService(BaseService[Widget, WidgetRepository]):
 
     def __init__(self, repository: WidgetRepository):
@@ -32,6 +37,14 @@ class WidgetService(BaseService[Widget, WidgetRepository]):
         schema: WidgetCreate,
     ) -> Widget:
         """Create a new widget inside an active dashboard container."""
+        snapshot = license_policy.get_snapshot(db)
+        current_count = license_usage.count_widgets(db)
+        license_policy.ensure_capacity(
+            snapshot,
+            LicenseFeature.WIDGETS,
+            current_count=current_count,
+        )
+
         # 1. Verify dashboard exists and is active
         dashboard = db.scalar(select(Dashboard).where(Dashboard.id == dashboard_id))
         if not dashboard or not dashboard.is_active:

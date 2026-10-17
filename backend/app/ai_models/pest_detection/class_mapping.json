@@ -1,0 +1,490 @@
+{
+  "number_of_classes": 97,
+  "classes": [
+    {
+      "model_id": 0,
+      "original_ip102_id": 0,
+      "pest_name": "rice leaf roller"
+    },
+    {
+      "model_id": 1,
+      "original_ip102_id": 1,
+      "pest_name": "rice leaf caterpillar"
+    },
+    {
+      "model_id": 2,
+      "original_ip102_id": 2,
+      "pest_name": "paddy stem maggot"
+    },
+    {
+      "model_id": 3,
+      "original_ip102_id": 3,
+      "pest_name": "asiatic rice borer"
+    },
+    {
+      "model_id": 4,
+      "original_ip102_id": 4,
+      "pest_name": "yellow rice borer"
+    },
+    {
+      "model_id": 5,
+      "original_ip102_id": 5,
+      "pest_name": "rice gall midge"
+    },
+    {
+      "model_id": 6,
+      "original_ip102_id": 6,
+      "pest_name": "Rice Stemfly"
+    },
+    {
+      "model_id": 7,
+      "original_ip102_id": 7,
+      "pest_name": "brown plant hopper"
+    },
+    {
+      "model_id": 8,
+      "original_ip102_id": 8,
+      "pest_name": "white backed plant hopper"
+    },
+    {
+      "model_id": 9,
+      "original_ip102_id": 9,
+      "pest_name": "small brown plant hopper"
+    },
+    {
+      "model_id": 10,
+      "original_ip102_id": 10,
+      "pest_name": "rice water weevil"
+    },
+    {
+      "model_id": 11,
+      "original_ip102_id": 11,
+      "pest_name": "rice leafhopper"
+    },
+    {
+      "model_id": 12,
+      "original_ip102_id": 12,
+      "pest_name": "grain spreader thrips"
+    },
+    {
+      "model_id": 13,
+      "original_ip102_id": 13,
+      "pest_name": "rice shell pest"
+    },
+    {
+      "model_id": 14,
+      "original_ip102_id": 14,
+      "pest_name": "grub"
+    },
+    {
+      "model_id": 15,
+      "original_ip102_id": 15,
+      "pest_name": "mole cricket"
+    },
+    {
+      "model_id": 16,
+      "original_ip102_id": 16,
+      "pest_name": "wireworm"
+    },
+    {
+      "model_id": 17,
+      "original_ip102_id": 17,
+      "pest_name": "white margined moth"
+    },
+    {
+      "model_id": 18,
+      "original_ip102_id": 18,
+      "pest_name": "black cutworm"
+    },
+    {
+      "model_id": 19,
+      "original_ip102_id": 19,
+      "pest_name": "large cutworm"
+    },
+    {
+      "model_id": 20,
+      "original_ip102_id": 20,
+      "pest_name": "yellow cutworm"
+    },
+    {
+      "model_id": 21,
+      "original_ip102_id": 21,
+      "pest_name": "red spider"
+    },
+    {
+      "model_id": 22,
+      "original_ip102_id": 22,
+      "pest_name": "corn borer"
+    },
+    {
+      "model_id": 23,
+      "original_ip102_id": 23,
+      "pest_name": "army worm"
+    },
+    {
+      "model_id": 24,
+      "original_ip102_id": 24,
+      "pest_name": "aphids"
+    },
+    {
+      "model_id": 25,
+      "original_ip102_id": 25,
+      "pest_name": "Potosiabre vitarsis"
+    },
+    {
+      "model_id": 26,
+      "original_ip102_id": 26,
+      "pest_name": "peach borer"
+    },
+    {
+      "model_id": 27,
+      "original_ip102_id": 27,
+      "pest_name": "english grain aphid"
+    },
+    {
+      "model_id": 28,
+      "original_ip102_id": 28,
+      "pest_name": "green bug"
+    },
+    {
+      "model_id": 29,
+      "original_ip102_id": 29,
+      "pest_name": "bird cherry-oataphid"
+    },
+    {
+      "model_id": 30,
+      "original_ip102_id": 30,
+      "pest_name": "wheat blossom midge"
+    },
+    {
+      "model_id": 31,
+      "original_ip102_id": 31,
+      "pest_name": "penthaleus major"
+    },
+    {
+      "model_id": 32,
+      "original_ip102_id": 32,
+      "pest_name": "longlegged spider mite"
+    },
+    {
+      "model_id": 33,
+      "original_ip102_id": 33,
+      "pest_name": "wheat phloeothrips"
+    },
+    {
+      "model_id": 34,
+      "original_ip102_id": 34,
+      "pest_name": "wheat sawfly"
+    },
+    {
+      "model_id": 35,
+      "original_ip102_id": 35,
+      "pest_name": "cerodonta denticornis"
+    },
+    {
+      "model_id": 36,
+      "original_ip102_id": 36,
+      "pest_name": "beet fly"
+    },
+    {
+      "model_id": 37,
+      "original_ip102_id": 37,
+      "pest_name": "flea beetle"
+    },
+    {
+      "model_id": 38,
+      "original_ip102_id": 38,
+      "pest_name": "cabbage army worm"
+    },
+    {
+      "model_id": 39,
+      "original_ip102_id": 39,
+      "pest_name": "beet army worm"
+    },
+    {
+      "model_id": 40,
+      "original_ip102_id": 40,
+      "pest_name": "Beet spot flies"
+    },
+    {
+      "model_id": 41,
+      "original_ip102_id": 41,
+      "pest_name": "meadow moth"
+    },
+    {
+      "model_id": 42,
+      "original_ip102_id": 42,
+      "pest_name": "beet weevil"
+    },
+    {
+      "model_id": 43,
+      "original_ip102_id": 43,
+      "pest_name": "sericaorient alismots chulsky"
+    },
+    {
+      "model_id": 44,
+      "original_ip102_id": 44,
+      "pest_name": "alfalfa weevil"
+    },
+    {
+      "model_id": 45,
+      "original_ip102_id": 45,
+      "pest_name": "flax budworm"
+    },
+    {
+      "model_id": 46,
+      "original_ip102_id": 46,
+      "pest_name": "alfalfa plant bug"
+    },
+    {
+      "model_id": 47,
+      "original_ip102_id": 47,
+      "pest_name": "tarnished plant bug"
+    },
+    {
+      "model_id": 48,
+      "original_ip102_id": 48,
+      "pest_name": "Locustoidea"
+    },
+    {
+      "model_id": 49,
+      "original_ip102_id": 49,
+      "pest_name": "lytta polita"
+    },
+    {
+      "model_id": 50,
+      "original_ip102_id": 50,
+      "pest_name": "legume blister beetle"
+    },
+    {
+      "model_id": 51,
+      "original_ip102_id": 51,
+      "pest_name": "blister beetle"
+    },
+    {
+      "model_id": 52,
+      "original_ip102_id": 52,
+      "pest_name": "therioaphis maculata Buckton"
+    },
+    {
+      "model_id": 53,
+      "original_ip102_id": 53,
+      "pest_name": "odontothrips loti"
+    },
+    {
+      "model_id": 54,
+      "original_ip102_id": 54,
+      "pest_name": "Thrips"
+    },
+    {
+      "model_id": 55,
+      "original_ip102_id": 55,
+      "pest_name": "alfalfa seed chalcid"
+    },
+    {
+      "model_id": 56,
+      "original_ip102_id": 56,
+      "pest_name": "Pieris canidia"
+    },
+    {
+      "model_id": 57,
+      "original_ip102_id": 57,
+      "pest_name": "Apolygus lucorum"
+    },
+    {
+      "model_id": 58,
+      "original_ip102_id": 58,
+      "pest_name": "Limacodidae"
+    },
+    {
+      "model_id": 59,
+      "original_ip102_id": 61,
+      "pest_name": "Brevipoalpus lewisi McGregor"
+    },
+    {
+      "model_id": 60,
+      "original_ip102_id": 62,
+      "pest_name": "oides decempunctata"
+    },
+    {
+      "model_id": 61,
+      "original_ip102_id": 64,
+      "pest_name": "Pseudococcus comstocki Kuwana"
+    },
+    {
+      "model_id": 62,
+      "original_ip102_id": 65,
+      "pest_name": "parathrene regalis"
+    },
+    {
+      "model_id": 63,
+      "original_ip102_id": 66,
+      "pest_name": "Ampelophaga"
+    },
+    {
+      "model_id": 64,
+      "original_ip102_id": 67,
+      "pest_name": "Lycorma delicatula"
+    },
+    {
+      "model_id": 65,
+      "original_ip102_id": 68,
+      "pest_name": "Xylotrechus"
+    },
+    {
+      "model_id": 66,
+      "original_ip102_id": 69,
+      "pest_name": "Cicadella viridis"
+    },
+    {
+      "model_id": 67,
+      "original_ip102_id": 70,
+      "pest_name": "Miridae"
+    },
+    {
+      "model_id": 68,
+      "original_ip102_id": 71,
+      "pest_name": "Trialeurodes vaporariorum"
+    },
+    {
+      "model_id": 69,
+      "original_ip102_id": 72,
+      "pest_name": "Erythroneura apicalis"
+    },
+    {
+      "model_id": 70,
+      "original_ip102_id": 73,
+      "pest_name": "Papilio xuthus"
+    },
+    {
+      "model_id": 71,
+      "original_ip102_id": 74,
+      "pest_name": "Panonchus citri McGregor"
+    },
+    {
+      "model_id": 72,
+      "original_ip102_id": 76,
+      "pest_name": "Icerya purchasi Maskell"
+    },
+    {
+      "model_id": 73,
+      "original_ip102_id": 77,
+      "pest_name": "Unaspis yanonensis"
+    },
+    {
+      "model_id": 74,
+      "original_ip102_id": 78,
+      "pest_name": "Ceroplastes rubens"
+    },
+    {
+      "model_id": 75,
+      "original_ip102_id": 79,
+      "pest_name": "Chrysomphalus aonidum"
+    },
+    {
+      "model_id": 76,
+      "original_ip102_id": 81,
+      "pest_name": "Nipaecoccus vastalor"
+    },
+    {
+      "model_id": 77,
+      "original_ip102_id": 82,
+      "pest_name": "Aleurocanthus spiniferus"
+    },
+    {
+      "model_id": 78,
+      "original_ip102_id": 83,
+      "pest_name": "Tetradacus c Bactrocera minax"
+    },
+    {
+      "model_id": 79,
+      "original_ip102_id": 84,
+      "pest_name": "Dacus dorsalis(Hendel)"
+    },
+    {
+      "model_id": 80,
+      "original_ip102_id": 85,
+      "pest_name": "Bactrocera tsuneonis"
+    },
+    {
+      "model_id": 81,
+      "original_ip102_id": 86,
+      "pest_name": "Prodenia litura"
+    },
+    {
+      "model_id": 82,
+      "original_ip102_id": 87,
+      "pest_name": "Adristyrannus"
+    },
+    {
+      "model_id": 83,
+      "original_ip102_id": 88,
+      "pest_name": "Phyllocnistis citrella Stainton"
+    },
+    {
+      "model_id": 84,
+      "original_ip102_id": 89,
+      "pest_name": "Toxoptera citricidus"
+    },
+    {
+      "model_id": 85,
+      "original_ip102_id": 90,
+      "pest_name": "Toxoptera aurantii"
+    },
+    {
+      "model_id": 86,
+      "original_ip102_id": 91,
+      "pest_name": "Aphis citricola Vander Goot"
+    },
+    {
+      "model_id": 87,
+      "original_ip102_id": 92,
+      "pest_name": "Scirtothrips dorsalis Hood"
+    },
+    {
+      "model_id": 88,
+      "original_ip102_id": 93,
+      "pest_name": "Dasineura sp"
+    },
+    {
+      "model_id": 89,
+      "original_ip102_id": 94,
+      "pest_name": "Lawana imitata Melichar"
+    },
+    {
+      "model_id": 90,
+      "original_ip102_id": 95,
+      "pest_name": "Salurnis marginella Guerr"
+    },
+    {
+      "model_id": 91,
+      "original_ip102_id": 96,
+      "pest_name": "Deporaus marginatus Pascoe"
+    },
+    {
+      "model_id": 92,
+      "original_ip102_id": 97,
+      "pest_name": "Chlumetia transversa"
+    },
+    {
+      "model_id": 93,
+      "original_ip102_id": 98,
+      "pest_name": "Mango flat beak leafhopper"
+    },
+    {
+      "model_id": 94,
+      "original_ip102_id": 99,
+      "pest_name": "Rhytidodera bowrinii white"
+    },
+    {
+      "model_id": 95,
+      "original_ip102_id": 100,
+      "pest_name": "Sternochetus frigidus"
+    },
+    {
+      "model_id": 96,
+      "original_ip102_id": 101,
+      "pest_name": "Cicadellidae"
+    }
+  ]
+}

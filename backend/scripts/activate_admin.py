@@ -10,8 +10,9 @@ from app.core.password import hash_password
 
 db = SessionLocal()
 try:
-    new_hash = hash_password('Password@123')
-    result = db.execute(text("UPDATE users SET password_hash = :hash, failed_login_attempts = 0, locked_until = NULL WHERE email = 'admin@localiot.com'"), {"hash": new_hash})
+    admin_pw = os.getenv("ADMIN_PASSWORD", "Password@123")
+    new_hash = hash_password(admin_pw)
+    result = db.execute(text("UPDATE users SET password_hash = :hash, role = 'Super Admin', failed_login_attempts = 0, locked_until = NULL WHERE email = 'admin@localiot.com'"), {"hash": new_hash})
     db.commit()
     if result.rowcount > 0:
         print('Admin password re-hashed and unlocked successfully!')

@@ -55,3 +55,29 @@ export const updateDevice = async (
 export const deleteDevice = async (deviceId: string): Promise<void> => {
   await api.delete(`/devices/${deviceId}`);
 };
+
+export const getDeviceCredentials = async (deviceId: string) => {
+  const response = await api.get(`/devices/${deviceId}/credentials`);
+  return response.data;
+};
+
+export const createDeviceCredential = async (deviceId: string, name = 'Primary Key') => {
+  const response = await api.post(`/devices/${deviceId}/credentials`, { name });
+  return response.data;
+};
+
+export const rotateDeviceCredential = async (deviceId: string, credentialId: string) => {
+  const response = await api.post(`/devices/${deviceId}/credentials/${credentialId}/rotate`);
+  return response.data;
+};
+
+export const revokeDeviceCredential = async (deviceId: string, credentialId: string) => {
+  await api.delete(`/devices/${deviceId}/credentials/${credentialId}`);
+};
+
+export const getAllDevices = async (search?: string): Promise<Device[]> => {
+  const response = await api.get<Device[]>('/devices/', {
+    params: { search: search || undefined },
+  });
+  return response.data;
+};

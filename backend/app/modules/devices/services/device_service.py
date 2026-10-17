@@ -36,6 +36,11 @@ from app.shared.services.base_service import BaseService
 logger = logging.getLogger(__name__)
 
 
+from app.modules.licensing.features import LicenseFeature
+from app.modules.licensing.services.license_policy import license_policy
+from app.modules.licensing.services.license_usage import license_usage
+
+
 class DeviceService(BaseService[Device, DeviceRepository]):
 
     def __init__(self):
@@ -57,6 +62,14 @@ class DeviceService(BaseService[Device, DeviceRepository]):
         Raises:
             DeviceCodeTaken — if code already used within this gateway
         """
+        snapshot = license_policy.get_snapshot(db)
+        current_count = license_usage.count_devices(db)
+        license_policy.ensure_capacity(
+            snapshot,
+            LicenseFeature.DEVICES,
+            current_count=current_count,
+        )
+
         if self.repository.exists_by_code(db, gateway_id, payload.code):
             raise DeviceCodeTaken()
 
@@ -66,6 +79,21 @@ class DeviceService(BaseService[Device, DeviceRepository]):
         )
 
         result = self.repository.create(db, device)
+
+        # Auto-create initial primary API key credential for the device
+        try:
+            from app.modules.devices.services.device_credential_service import DeviceCredentialService
+            from app.modules.devices.schemas.device_credential import DeviceCredentialCreate
+
+            cred_svc = DeviceCredentialService()
+            _, raw_key = cred_svc.create(
+                db,
+                result.id,
+                DeviceCredentialCreate(name="Default Primary Key"),
+            )
+            setattr(result, "api_key", raw_key)
+        except Exception as cred_err:
+            logger.warning(f"Could not auto-generate credential for device {result.id}: {cred_err}")
 
         logger.info(
             "device.created",

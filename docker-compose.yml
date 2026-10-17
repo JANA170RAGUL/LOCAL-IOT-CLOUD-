@@ -1,78 +1,169 @@
 version: "3.9"
 
+x-backend-common: &backend-common
+  build:
+    context: ./backend
+  image: localiotcloud-backend:latest
+  env_file:
+    - ./backend/.env
+  restart: unless-stopped
+
 services:
 
   mysql:
     image: mysql:8.4
     container_name: licp-mysql
-
     restart: unless-stopped
-
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD required}
       MYSQL_DATABASE: licp_platform
-
     ports:
       - "127.0.0.1:3307:3306"
-
     volumes:
       - mysql_data:/var/lib/mysql
 
   influxdb:
     image: influxdb:2.7
-
     container_name: licp-influxdb
-
     restart: unless-stopped
-
     ports:
       - "127.0.0.1:8086:8086"
-
     volumes:
       - influxdb_data:/var/lib/influxdb2
 
   redis:
     image: redis:7
-
     container_name: licp-redis
-
+    command: [ "redis-server", "--appendonly", "yes", "--appendfsync", "everysec" ]
     restart: unless-stopped
-
     ports:
       - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
 
   mosquitto:
     image: eclipse-mosquitto:2
-
     container_name: licp-mqtt
-
     restart: unless-stopped
-
     ports:
-      - "1883:1883"
+      - "8883:8883"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config:ro
+      - ./mosquitto/data:/mosquitto/data
+      - ./deployment/certificates/ca/localiot-ca.crt:/mosquitto/certs/localiot-ca.crt:ro
+      - ./deployment/certificates/mqtt/mqtt-server.crt:/mosquitto/certs/mqtt-server.crt:ro
+      - ./deployment/certificates/mqtt/mqtt-server.key:/mosquitto/certs/mqtt-server.key:ro
+
+  nginx:
+    image: nginx:alpine
+    container_name: licp-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deployment/nginx/localiot.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./deployment/certificates/https/https-server.crt:/etc/nginx/certs/https-server.crt:ro
+      - ./deployment/certificates/https/https-server.key:/etc/nginx/certs/https-server.key:ro
+
+  backend:
+    <<: *backend-common
+    container_name: licp-backend
+    command: [ "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4" ]
+    environment:
+      SERVICE_NAME: api
+    ports:
+      - "127.0.0.1:8000:8000"
+    expose:
+      - "8000"
+    depends_on:
+      - mysql
+      - redis
+      - influxdb
+      - mosquitto
+
+  coap:
+    <<: *backend-common
+    container_name: licp-coap
+    command: [ "python", "-m", "app.modules.telemetry.coap.server" ]
+    environment:
+      SERVICE_NAME: coap
+    ports:
+      - "5683:5683/udp"
+    depends_on:
+      - mysql
+      - redis
+
+  mqtt-worker:
+    <<: *backend-common
+    container_name: licp-mqtt-worker
+    command: [ "python", "-m", "app.workers.mqtt_worker" ]
+    healthcheck:
+      disable: true
+    environment:
+      SERVICE_NAME: mqtt-worker
+    volumes:
+      - ./deployment/certificates:/app/deployment/certificates:ro
+    depends_on:
+      - mysql
+      - redis
+      - mosquitto
+
+  telemetry-worker:
+    <<: *backend-common
+    container_name: licp-telemetry-worker
+    command: [ "python", "-m", "app.workers.telemetry_worker" ]
+    environment:
+      SERVICE_NAME: telemetry-worker
+    depends_on:
+      - mysql
+      - redis
+      - influxdb
+
+  notification-worker:
+    <<: *backend-common
+    container_name: licp-notification-worker
+    command: [ "python", "-m", "app.workers.notification_worker" ]
+    environment:
+      SERVICE_NAME: notification-worker
+    depends_on:
+      - mysql
+      - redis
+
+  command-worker:
+    <<: *backend-common
+    container_name: licp-command-worker
+    command: [ "python", "-m", "app.workers.command_worker" ]
+    environment:
+      SERVICE_NAME: command-worker
+    depends_on:
+      - mysql
+      - redis
+      - mosquitto
+
+  migrate:
+    <<: *backend-common
+    container_name: licp-migrate
+    command: [ "alembic", "upgrade", "head" ]
+    restart: "no"
+    depends_on:
+      - mysql
 
   adminer:
     image: adminer
-
     container_name: licp-adminer
-
     restart: unless-stopped
-
     ports:
       - "127.0.0.1:8080:8080"
 
   grafana:
     image: grafana/grafana
-
     container_name: licp-grafana
-
     restart: unless-stopped
-
     ports:
       - "127.0.0.1:3000:3000"
 
 volumes:
-
   mysql_data:
-
   influxdb_data:
+  redis_data:

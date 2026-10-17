@@ -1,0 +1,25 @@
+# ==========================================================
+# LocalIoTCloud backend service
+# ==========================================================
+
+user localiot-backend
+
+topic read localiot/v1/devices/+/telemetry
+topic read localiot/v1/devices/+/responses
+topic read localiot/v1/devices/+/status
+
+topic write localiot/v1/devices/+/commands
+
+
+# ==========================================================
+# Physical devices
+#
+# MQTT username MUST equal the Device UUID.
+# %u = authenticated MQTT username
+# ==========================================================
+
+pattern write localiot/v1/devices/%u/telemetry
+pattern write localiot/v1/devices/%u/responses
+pattern write localiot/v1/devices/%u/status
+
+pattern read localiot/v1/devices/%u/commands

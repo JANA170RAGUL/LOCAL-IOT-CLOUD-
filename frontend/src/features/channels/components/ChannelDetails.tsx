@@ -3,11 +3,12 @@ import {
   Box, Typography, Button, Card, CardContent, 
   CircularProgress, IconButton, Tooltip, Chip, Paper, Tabs, Tab, Grid, 
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination,
-  TextField, MenuItem, Select, FormControl, InputLabel, OutlinedInput, Checkbox, ListItemText, Alert
+  TextField, MenuItem, Select, FormControl, InputLabel, OutlinedInput, Checkbox, ListItemText, Alert,
+  Dialog, DialogTitle, DialogContent, DialogActions
 } from '@mui/material';
 import { 
   ArrowBack, ContentCopy, Visibility, VisibilityOff, Refresh, Public, Lock, Business,
-  Storage, Speed, Message, AccessTime, CheckCircle, Warning, Error as ErrorIcon, ArrowUpward, ArrowDownward, Code, CloudUpload, CloudDownload
+  Storage, Speed, Message, AccessTime, CheckCircle, Warning, Error as ErrorIcon, ArrowUpward, ArrowDownward, Code, CloudUpload, CloudDownload, Delete
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router';
 import { channelsApi, Channel, ChannelFeed, ChannelDashboardMetrics, ImportSummary } from '../api/channels';
@@ -85,17 +86,44 @@ export const ChannelDetails: React.FC = () => {
     return () => clearInterval(interval);
   }, [id]);
 
+  const [createdRawKeyModal, setCreatedRawKeyModal] = useState<{ open: boolean; rawKey: string; keyType: string; name: string }>({
+    open: false,
+    rawKey: '',
+    keyType: '',
+    name: ''
+  });
+
   const copyToClipboard = (text: string) => navigator.clipboard.writeText(text);
 
   const handleRegenerate = async (type: 'read' | 'write') => {
     if (window.confirm(`Are you sure you want to regenerate the ${type.toUpperCase()} API key? Any applications using the old key will lose access immediately.`)) {
       if (id) {
         try {
-          await channelsApi.regenerateApiKey(id, type);
+          const res = await channelsApi.regenerateApiKey(id, type);
+          setCreatedRawKeyModal({
+            open: true,
+            rawKey: res.raw_key,
+            keyType: res.key_type,
+            name: res.name
+          });
           fetchData();
         } catch (e) {
           console.error(e);
           alert('Failed to regenerate key');
+        }
+      }
+    }
+  };
+
+  const handleDeleteChannel = async () => {
+    if (window.confirm(`Are you sure you want to delete channel "${channel?.name}"? All associated settings and telemetry feeds will be permanently deleted.`)) {
+      if (id) {
+        try {
+          await channelsApi.deleteChannel(id);
+          navigate('/channels');
+        } catch (e) {
+          console.error('Failed to delete channel', e);
+          alert('Failed to delete channel');
         }
       }
     }
@@ -226,6 +254,16 @@ export const ChannelDetails: React.FC = () => {
             />
           </Box>
         </Box>
+
+        <Button
+          variant="outlined"
+          color="error"
+          startIcon={<Delete />}
+          onClick={handleDeleteChannel}
+          sx={{ borderRadius: 2 }}
+        >
+          Delete Channel
+        </Button>
       </Box>
 
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
@@ -478,18 +516,15 @@ export const ChannelDetails: React.FC = () => {
 
                 <Box sx={{ mb: 3 }}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>Read API Key</Typography>
-                  <Typography variant="body2" color="textSecondary">Required to read feeds (if private) or fetch data programmatically.</Typography>
+                  <Typography variant="body2" color="textSecondary">Hashed securely in database. Raw key shown once upon creation/rotation.</Typography>
                   <Paper variant="outlined" sx={{ p: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 1, bgcolor: 'background.default' }}>
-                    <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{readKey}</Typography>
+                    <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                      {readKey ? `${readKey.substring(0, 16)}...` : 'Key Hashed & Active'}
+                    </Typography>
                     <Box>
-                      <Tooltip title="Regenerate Read Key">
+                      <Tooltip title="Regenerate / Rotate Read Key">
                         <IconButton size="small" onClick={() => handleRegenerate('read')} color="warning">
                           <Refresh fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Copy Key">
-                        <IconButton size="small" onClick={() => readKey && copyToClipboard(readKey)}>
-                          <ContentCopy fontSize="small" />
                         </IconButton>
                       </Tooltip>
                     </Box>
@@ -498,27 +533,27 @@ export const ChannelDetails: React.FC = () => {
 
                 <Box sx={{ mb: 3 }}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>Write API Key</Typography>
-                  <Typography variant="body2" color="textSecondary">Required to write data to this channel.</Typography>
+                  <Typography variant="body2" color="textSecondary">Hashed securely in database. Raw key shown once upon creation/rotation.</Typography>
                   <Paper variant="outlined" sx={{ p: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 1, bgcolor: 'background.default' }}>
                     <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                      {showWriteKey ? writeKey : '••••••••••••••••••••••••••••••••'}
+                      {writeKey ? `${writeKey.substring(0, 16)}...` : 'Key Hashed & Active'}
                     </Typography>
                     <Box>
-                      <IconButton size="small" onClick={() => setShowWriteKey(!showWriteKey)}>
-                        {showWriteKey ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
-                      </IconButton>
-                      <Tooltip title="Regenerate Write Key">
+                      <Tooltip title="Regenerate / Rotate Write Key">
                         <IconButton size="small" onClick={() => handleRegenerate('write')} color="warning">
                           <Refresh fontSize="small" />
                         </IconButton>
                       </Tooltip>
-                      <Tooltip title="Copy Key">
-                        <IconButton size="small" onClick={() => writeKey && copyToClipboard(writeKey)}>
-                          <ContentCopy fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
                     </Box>
                   </Paper>
+                </Box>
+
+                <Box sx={{ mt: 4, pt: 3, borderTop: 1, borderColor: 'divider' }}>
+                  <Typography variant="subtitle2" color="error" sx={{ fontWeight: 'bold', mb: 1 }}>Danger Zone</Typography>
+                  <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>Permanently delete this channel and all recorded telemetry feeds.</Typography>
+                  <Button variant="outlined" color="error" startIcon={<Delete />} onClick={handleDeleteChannel} fullWidth>
+                    Delete Channel
+                  </Button>
                 </Box>
               </CardContent>
             </Card>
@@ -798,6 +833,34 @@ ${channel.fields.map(f => `                     "\\"${f.field_key}\\": 25.5, "`)
       <CustomTabPanel value={mainTab} index={4}>
         <ChannelThingSpeakTab channel={channel!} />
       </CustomTabPanel>
+
+      {/* ONE-TIME RAW API KEY DISPLAY MODAL */}
+      <Dialog open={createdRawKeyModal.open} onClose={() => setCreatedRawKeyModal({ ...createdRawKeyModal, open: false })} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 'bold' }}>One-Time API Key Display</DialogTitle>
+        <DialogContent dividers>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            <strong>Important:</strong> Copy your API key now! For security reasons, this key is hashed with HMAC SHA-256 and will <strong>never</strong> be displayed again after closing this window.
+          </Alert>
+          <Typography variant="subtitle2" color="textSecondary" sx={{ mb: 1 }}>
+            {createdRawKeyModal.name} ({createdRawKeyModal.keyType})
+          </Typography>
+          <Paper variant="outlined" sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: '#1e1e1e', color: '#61afef' }}>
+            <Typography variant="body1" sx={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
+              {createdRawKeyModal.rawKey}
+            </Typography>
+            <Tooltip title="Copy Key">
+              <IconButton onClick={() => copyToClipboard(createdRawKeyModal.rawKey)} sx={{ color: '#fff', ml: 1 }}>
+                <ContentCopy />
+              </IconButton>
+            </Tooltip>
+          </Paper>
+        </DialogContent>
+        <DialogActions>
+          <Button variant="contained" onClick={() => setCreatedRawKeyModal({ ...createdRawKeyModal, open: false })}>
+            I Have Saved My API Key
+          </Button>
+        </DialogActions>
+      </Dialog>
 
     </Box>
   );

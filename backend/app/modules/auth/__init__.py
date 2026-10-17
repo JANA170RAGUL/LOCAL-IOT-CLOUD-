@@ -1,15 +1,5 @@
 """
-app/modules/authentication
+app/modules/auth
 
-User login, logout, token refresh, and password management.
-
-As the module is implemented, update this file to re-export:
-    - router        (FastAPI router)
-    - ORM models
-    - Pydantic schemas
-    - Service class
+User authentication, token issue, refresh sessions, and password recovery.
 """
-
-from app.modules.auth.api.router import router
-
-__all__ = ["router"]

@@ -7,9 +7,16 @@ class LoginRequest(BaseModel):
 
 class TokenResponse(BaseModel):
     access_token: str
-    token_type: str = "bearer"
     refresh_token: str
+    token_type: str = "bearer"
+    expires_in: int = 900
     requires_password_change: bool = False
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
+class LogoutRequest(BaseModel):
+    refresh_token: str
 
 class ChangePasswordRequest(BaseModel):
     current_password: str

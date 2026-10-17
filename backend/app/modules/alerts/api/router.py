@@ -26,11 +26,22 @@ from app.modules.alerts.schemas.alert import (
 from app.modules.alerts.services.alert_service import AlertService
 from app.modules.projects.models.project import Project
 
+from app.core.access_scope import AccessScope, get_access_scope
+from app.core.tenant_guard import TenantGuard
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(
     tags=["Alerts"],
 )
+
+
+def _guard_alert(db: Session, alert_id: str, svc: AlertService, scope: AccessScope):
+    alert = svc.get_alert(db, alert_id)
+    project_id = svc._get_project_id_for_alert(alert)
+    if project_id:
+        TenantGuard.project(db, project_id, scope)
+    return alert
 
 
 @router.post(
@@ -45,8 +56,11 @@ def create_alert(
     payload: AlertCreate,
     db: Session = Depends(get_db),
     svc: AlertService = Depends(get_alert_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> AlertResponse:
-    return svc.create_alert(db, payload)
+    TenantGuard.project(db, project_id, scope)
+    created = svc.create_alert(db, payload)
+    return AlertResponse.model_validate(created)
 
 
 @router.get(
@@ -66,7 +80,9 @@ def list_alerts(
     page_size: int = Query(DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE, alias="page_size", description="Items per page"),
     db: Session = Depends(get_db),
     svc: AlertService = Depends(get_alert_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> AlertListResponse:
+    TenantGuard.project(db, project_id, scope)
     filters = AlertFilter(
         status=status_filter,
         severity=severity,
@@ -79,7 +95,7 @@ def list_alerts(
         total=total,
         page=page,
         page_size=page_size,
-        items=items,
+        items=[AlertResponse.model_validate(item) for item in items],
     )
 
 
@@ -93,8 +109,11 @@ def get_alert(
     alert_id: str,
     db: Session = Depends(get_db),
     svc: AlertService = Depends(get_alert_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> AlertResponse:
-    return svc.get_alert(db, alert_id)
+    _guard_alert(db, alert_id, svc, scope)
+    alert = svc.get_alert(db, alert_id)
+    return AlertResponse.model_validate(alert)
 
 
 @router.patch(
@@ -107,8 +126,11 @@ def update_alert(
     payload: AlertUpdate,
     db: Session = Depends(get_db),
     svc: AlertService = Depends(get_alert_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> AlertResponse:
-    return svc.update_alert(db, alert_id, payload)
+    _guard_alert(db, alert_id, svc, scope)
+    updated = svc.update_alert(db, alert_id, payload)
+    return AlertResponse.model_validate(updated)
 
 
 @router.post(
@@ -122,8 +144,11 @@ def acknowledge_alert(
     payload: AlertAcknowledgeRequest,
     db: Session = Depends(get_db),
     svc: AlertService = Depends(get_alert_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> AlertResponse:
-    return svc.acknowledge_alert(db, alert_id, payload.acknowledged_by)
+    _guard_alert(db, alert_id, svc, scope)
+    acked = svc.acknowledge_alert(db, alert_id, payload.acknowledged_by)
+    return AlertResponse.model_validate(acked)
 
 
 @router.post(
@@ -136,8 +161,11 @@ def resolve_alert(
     alert_id: str,
     db: Session = Depends(get_db),
     svc: AlertService = Depends(get_alert_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> AlertResponse:
-    return svc.resolve_alert(db, alert_id)
+    _guard_alert(db, alert_id, svc, scope)
+    resolved = svc.resolve_alert(db, alert_id)
+    return AlertResponse.model_validate(resolved)
 
 
 @router.delete(
@@ -149,7 +177,9 @@ def deactivate_alert(
     alert_id: str,
     db: Session = Depends(get_db),
     svc: AlertService = Depends(get_alert_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> None:
+    _guard_alert(db, alert_id, svc, scope)
     svc.deactivate_alert(db, alert_id)
 
 
@@ -188,10 +218,13 @@ async def websocket_alerts_stream(
         while True:
             msg = pubsub.get_message(ignore_subscribe_messages=True, timeout=0)
             if msg:
-                data = msg["data"]
-                if isinstance(data, bytes):
-                    data = data.decode("utf-8")
-                await websocket.send_text(data)
+                raw_data = msg.get("data")
+                if raw_data is not None:
+                    if isinstance(raw_data, bytes):
+                        text_data = raw_data.decode("utf-8")
+                    else:
+                        text_data = str(raw_data)
+                    await websocket.send_text(text_data)
 
             await asyncio.sleep(0.1)
     except WebSocketDisconnect:

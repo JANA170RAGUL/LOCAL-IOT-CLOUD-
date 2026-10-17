@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import TYPE_CHECKING
+from app.modules.device_provisioning.models.device_connection import DeviceConnection
 
 from sqlalchemy import DateTime, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -124,4 +125,24 @@ class Device(BaseModel):
         cascade="all, delete-orphan",
         lazy="select",
     )
+
+    credentials = relationship(
+        "DeviceCredential",
+        back_populates="device",
+        cascade="all, delete-orphan",
+    )
+
+    connection = relationship(
+        "DeviceConnection",
+        back_populates="device",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+    connection = relationship(
+        "DeviceConnection",
+        back_populates="device",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+
 

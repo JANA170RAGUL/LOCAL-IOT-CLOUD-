@@ -37,7 +37,7 @@ Authenticates user credentials and issues JWT Access & Refresh Tokens.
   ```json
   {
     "username": "admin@localiot.com",
-    "password": "Password@123"
+    "password": "<YOUR_SECURE_PASSWORD>"
   }
   ```
 - **Response** (`200 OK`):

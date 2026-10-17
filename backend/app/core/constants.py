@@ -97,12 +97,11 @@ class NotificationChannel(str, Enum):
 # ---------------------------------------------------------------------------
 
 class UserRole(str, Enum):
-    SUPER_ADMIN = "super_admin"    # platform-level (no tenant scope)
-    TENANT_ADMIN = "tenant_admin"  # full control within a tenant
-    ORG_ADMIN = "org_admin"        # full control within an organisation
-    ENGINEER = "engineer"          # read/write devices, rules, dashboards
-    VIEWER = "viewer"              # read-only
-    API_CLIENT = "api_client"      # machine-to-machine (service accounts)
+    SUPER_ADMIN = "Super Admin"
+    ORG_ADMIN = "Org Admin"
+    OPERATOR = "Operator"
+    VIEWER = "Viewer"
+
 
 
 class TokenType(str, Enum):

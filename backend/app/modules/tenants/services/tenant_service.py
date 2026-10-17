@@ -22,6 +22,8 @@ import logging
 from math import ceil
 
 from sqlalchemy.orm import Session
+from app.core.access_scope import AccessScope
+
 
 from app.modules.tenants.models.tenant import Tenant
 from app.modules.tenants.repositories.tenant_repository import TenantRepository
@@ -80,7 +82,7 @@ class TenantService(BaseService[Tenant, TenantRepository]):
         logger.info(
             "tenant.created",
             extra={
-                "tenant_id": str(result.id),
+                "tenant_id": result.id,
                 "org_id": organization_id,
                 "code": result.code,
             },
@@ -138,6 +140,7 @@ class TenantService(BaseService[Tenant, TenantRepository]):
         db: Session,
         organization_id: str,
         filters: TenantFilter,
+        scope: AccessScope | None = None,
     ) -> TenantListResponse:
         """
         Return a paginated list of tenants belonging to an organization.
@@ -146,7 +149,12 @@ class TenantService(BaseService[Tenant, TenantRepository]):
           - keyword search  (name / code / email)
           - status filter   (ACTIVE | INACTIVE | SUSPENDED | TRIAL | EXPIRED)
           - pagination      (page, page_size)
+          - scope           (restricts Operators/Viewers to their tenant)
         """
+        allowed_tenant_id = None
+        if scope and not scope.is_global and scope.tenant_id:
+            allowed_tenant_id = scope.tenant_id
+
         items, total = self.repository.list_by_organization(
             db,
             organization_id=organization_id,
@@ -154,6 +162,7 @@ class TenantService(BaseService[Tenant, TenantRepository]):
             status=filters.status,
             page=filters.page,
             page_size=filters.page_size,
+            allowed_tenant_id=allowed_tenant_id,
         )
 
         return TenantListResponse(
@@ -201,7 +210,7 @@ class TenantService(BaseService[Tenant, TenantRepository]):
         logger.info(
             "tenant.updated",
             extra={
-                "tenant_id": str(result.id),
+                "tenant_id": result.id,
                 "fields": list(update_data.keys()),
             },
         )

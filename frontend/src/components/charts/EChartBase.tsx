@@ -29,16 +29,20 @@ export const EChartBase: React.FC<EChartBaseProps> = ({
     tooltip: {
       backgroundColor: theme.palette.background.paper,
       borderColor: theme.palette.divider,
+      confine: true,
+      extraCssText: 'box-shadow: 0 8px 24px rgba(0,0,0,0.12); border-radius: 10px; padding: 10px; z-index: 1000;',
       textStyle: {
         color: theme.palette.text.primary,
+        fontSize: 12,
+        fontWeight: 600,
       },
       ...option?.tooltip,
     },
     grid: {
       top: 40,
-      right: 20,
-      bottom: 20,
-      left: 20,
+      right: 25,
+      bottom: 25,
+      left: 30,
       containLabel: true,
       ...option?.grid,
     },

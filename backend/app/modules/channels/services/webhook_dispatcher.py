@@ -2,10 +2,15 @@ import logging
 import requests
 import json
 import time
-from typing import Dict, Any, List
+import uuid
+import hmac
+import hashlib
+from typing import Dict, Any, List, Tuple
 from sqlalchemy.orm import Session
 from app.database.session import SessionLocal
 from app.modules.channels.models.channel import ChannelWebhook, WebhookDeliveryLog, WebhookType
+from app.modules.channels.security.webhook_crypto import decrypt_secret
+from app.modules.channels.security.webhook_url_validator import validate_webhook_url
 
 logger = logging.getLogger(__name__)
 
@@ -60,29 +65,50 @@ class WebhookDispatcher:
             return base_payload
 
     @staticmethod
-    def _send_request(webhook: ChannelWebhook, payload: Dict[str, Any]) -> tuple[bool, int, int, str]:
+    def _send_request(webhook: ChannelWebhook, payload: Dict[str, Any]) -> Tuple[bool, int, int, str]:
         """Executes the HTTP request and returns (success, status_code, duration_ms, response_body)."""
+        try:
+            validate_webhook_url(webhook.target_url)
+        except HTTPException as e:
+            logger.warning(f"SSRF validation blocked webhook dispatch to {webhook.target_url}: {e.detail}")
+            return (False, 0, 0, f"SSRF Validation Blocked: {e.detail}")
+
+        secret_token = decrypt_secret(webhook.secret_encrypted)
+        delivery_id = str(uuid.uuid4())
+        json_body = json.dumps(payload, separators=(',', ':'))
+
         headers = {
             "Content-Type": "application/json",
-            "User-Agent": "LocalIoTCloud-WebhookEngine/1.0"
+            "User-Agent": "LocalIoTCloud-WebhookEngine/1.0",
+            "X-LocalIoT-Delivery": delivery_id,
         }
-        
-        if webhook.auth_header and webhook.secret_token:
-            headers[webhook.auth_header] = webhook.secret_token
+
+        if secret_token:
+            sig = hmac.new(
+                secret_token.encode("utf-8"),
+                json_body.encode("utf-8"),
+                hashlib.sha256
+            ).hexdigest()
+            headers["X-LocalIoT-Signature"] = f"sha256={sig}"
+
+            if webhook.auth_header:
+                headers[webhook.auth_header] = secret_token
             
+        timeout = min(webhook.timeout_seconds or 5, 10.0)
         start_time = time.time()
         try:
             response = requests.post(
                 webhook.target_url, 
-                json=payload, 
+                data=json_body, 
                 headers=headers, 
-                timeout=webhook.timeout_seconds
+                timeout=timeout,
+                allow_redirects=False
             )
             duration = int((time.time() - start_time) * 1000)
-            return (response.ok, response.status_code, duration, response.text[:2000])
+            return (response.ok, response.status_code, duration, response.text[:4096])
         except requests.exceptions.RequestException as e:
             duration = int((time.time() - start_time) * 1000)
-            return (False, 0, duration, str(e)[:2000])
+            return (False, 0, duration, str(e)[:4096])
 
     @staticmethod
     def dispatch_task(webhook_id: str, event: str, channel_id: str, raw_payload: Dict[str, Any]):

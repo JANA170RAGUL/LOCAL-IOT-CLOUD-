@@ -63,6 +63,12 @@ export const SuperAdminDashboard: React.FC = () => {
   
   const isLoading = isOverviewLoading || isTrendsLoading || isSensorsLoading;
 
+  const hasLiveTelemetryData = Boolean(
+    telemetryTrends?.chart_data &&
+    telemetryTrends.chart_data.length > 0 &&
+    telemetryTrends.chart_data.some((d) => d.value > 0)
+  );
+
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
   
   useEffect(() => {
@@ -133,31 +139,24 @@ export const SuperAdminDashboard: React.FC = () => {
         <Box sx={{ display: 'flex', gap: 1.5, mb: 5, overflowX: 'auto', pb: 1, '&::-webkit-scrollbar': { height: '4px' }, '&::-webkit-scrollbar-thumb': { background: '#CBD5E1', borderRadius: '4px' } }}>
           <Chip icon={<CloudDone style={{ color: '#10B981' }}/>} label="Cloud: Operational" sx={{ background: 'rgba(16,185,129,0.1)', color: '#065F46', fontWeight: 600, borderRadius: '10px', px: 1 }} />
           <Chip icon={<Speed style={{ color: '#10B981' }}/>} label={`MQTT Broker: ${liveStatus?.online_gateways ? 'Online' : 'Pending'}`} sx={{ background: 'rgba(16,185,129,0.1)', color: '#065F46', fontWeight: 600, borderRadius: '10px', px: 1 }} />
-          <Chip icon={<Api style={{ color: '#10B981' }}/>} label="API Health: 99.9%" sx={{ background: 'rgba(16,185,129,0.1)', color: '#065F46', fontWeight: 600, borderRadius: '10px', px: 1 }} />
-          <Chip icon={<Storage style={{ color: '#10B981' }}/>} label="Database: Healthy" sx={{ background: 'rgba(16,185,129,0.1)', color: '#065F46', fontWeight: 600, borderRadius: '10px', px: 1 }} />
-          <Chip icon={<Memory style={{ color: '#F59E0B' }}/>} label="AI Engine: Processing" sx={{ background: 'rgba(245,158,11,0.1)', color: '#B45309', fontWeight: 600, borderRadius: '10px', px: 1 }} />
-          <Chip icon={<Warning style={{ color: alertsData?.open ? '#EF4444' : '#10B981' }}/>} label={`Active Alerts: ${alertsData?.open ?? 0}`} sx={{ background: alertsData?.open ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)', color: alertsData?.open ? '#991B1B' : '#065F46', fontWeight: 600, borderRadius: '10px', px: 1 }} />
         </Box>
 
-        {/* KPI GRID */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
+        {/* TOP KPI METRICS (8 CARDS) */}
+        <Grid container spacing={2.5} sx={{ mb: 4 }}>
           {kpis.map((kpi, idx) => (
             <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
-              <GlassCard sx={{ p: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: `4px solid ${kpi.color}` }}>
+              <GlassCard sx={{ p: 2.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box>
-                  <Typography variant="subtitle2" sx={{ color: '#64748B', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', mb: 0.5 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                     {kpi.label}
                   </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, mt: 0.5 }}>
                     <Typography variant="h4" sx={{ fontWeight: 800, color: '#1E293B' }}>
                       {kpi.value.toLocaleString()}
                     </Typography>
-                    <Typography variant="caption" sx={{ fontWeight: 700, color: kpi.trend.startsWith('+') ? '#10B981' : kpi.trend === 'Stable' ? '#64748B' : '#EF4444' }}>
-                      {kpi.trend}
-                    </Typography>
                   </Box>
                 </Box>
-                <Box sx={{ width: 56, height: 56, borderRadius: '16px', background: `${kpi.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: kpi.color }}>
+                <Box sx={{ width: 52, height: 52, borderRadius: '16px', background: `${kpi.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: kpi.color }}>
                   {kpi.icon}
                 </Box>
               </GlassCard>
@@ -174,27 +173,44 @@ export const SuperAdminDashboard: React.FC = () => {
                 <Typography variant="h6" sx={{ fontWeight: 700, color: '#1E293B' }}>
                   Telemetry Trend (Real-time)
                 </Typography>
-                <Chip label="Live Data" size="small" color="success" variant="outlined" sx={{ fontWeight: 600 }} />
+                <Chip 
+                  label={hasLiveTelemetryData ? "Live Data" : "No Active Telemetry"} 
+                  size="small" 
+                  color={hasLiveTelemetryData ? "success" : "default"} 
+                  variant="outlined" 
+                  sx={{ fontWeight: 600 }} 
+                />
               </Box>
-              <Box sx={{ flexGrow: 1, minHeight: 300 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={telemetryTrends?.chart_data || []}>
-                    <defs>
-                      <linearGradient id="colorConns" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.4}/>
-                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                    <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: '#64748B', fontSize: 12 }} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748B', fontSize: 12 }} />
-                    <RechartsTooltip 
-                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}
-                      labelStyle={{ fontWeight: 700, color: '#1E293B', marginBottom: '4px' }}
-                    />
-                    <Area type="monotone" dataKey="value" stroke="#3B82F6" strokeWidth={3} fillOpacity={1} fill="url(#colorConns)" />
-                  </AreaChart>
-                </ResponsiveContainer>
+              <Box sx={{ flexGrow: 1, minHeight: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {hasLiveTelemetryData ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={telemetryTrends?.chart_data || []}>
+                      <defs>
+                        <linearGradient id="colorConns" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.4}/>
+                          <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                      <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: '#64748B', fontSize: 12 }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748B', fontSize: 12 }} />
+                      <RechartsTooltip 
+                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}
+                        labelStyle={{ fontWeight: 700, color: '#1E293B', marginBottom: '4px' }}
+                      />
+                      <Area type="monotone" dataKey="value" stroke="#3B82F6" strokeWidth={3} fillOpacity={1} fill="url(#colorConns)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <Box sx={{ textAlign: 'center', py: 6 }}>
+                    <Typography variant="body1" sx={{ fontWeight: 700, color: '#64748B' }}>
+                      No Telemetry Data Recorded Yet
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#94A3B8', display: 'block', mt: 0.5 }}>
+                      Ingest physical sensor readings or run device telemetry to view real-time data streams.
+                    </Typography>
+                  </Box>
+                )}
               </Box>
             </GlassCard>
           </Grid>

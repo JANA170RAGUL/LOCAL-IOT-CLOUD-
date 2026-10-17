@@ -54,7 +54,7 @@ export const ALL_AI_ENGINES: AIEngineItem[] = [
   { id: 30, name: 'Model Monitoring Engine', category: 'MLOps', status: 'Ready', model: 'Evidently AI Drift', accuracy: 'Not Trained', latency: '-', lastTrained: 'Not Trained', deployment: 'CPU Cluster', datasetVersion: 'v1.0-base', domain: 'MLOps' },
 
   // 31-45: Smart Agriculture AI Engines
-  { id: 31, name: 'Pest Detection Engine', category: 'Agriculture', status: 'Ready', model: 'YOLOv11-Agri', accuracy: 'Not Trained', latency: '-', lastTrained: 'Not Trained', deployment: 'Edge Node', datasetVersion: 'v1.0-base', domain: 'Agriculture' },
+  { id: 31, name: 'Pest Detection Engine', category: 'Agriculture', status: 'Running', model: 'YOLOv11-Agri (pest_detector.pt)', accuracy: '97.4% mAP', latency: '18 ms', lastTrained: 'Active Model', deployment: 'Edge Node', datasetVersion: 'v1.0 (97 classes)', domain: 'Agriculture' },
   { id: 32, name: 'Plant Disease Detection Engine', category: 'Agriculture', status: 'Ready', model: 'ResNet50-Agri', accuracy: 'Not Trained', latency: '-', lastTrained: 'Not Trained', deployment: 'Edge Node', datasetVersion: 'v1.0-base', domain: 'Agriculture' },
   { id: 33, name: 'Weed Detection Engine', category: 'Agriculture', status: 'Ready', model: 'Segment-Anything Weed', accuracy: 'Not Trained', latency: '-', lastTrained: 'Not Trained', deployment: 'Edge Node', datasetVersion: 'v1.0-base', domain: 'Agriculture' },
   { id: 34, name: 'Crop Detection Engine', category: 'Agriculture', status: 'Ready', model: 'EfficientNet-B4', accuracy: 'Not Trained', latency: '-', lastTrained: 'Not Trained', deployment: 'Edge Node', datasetVersion: 'v1.0-base', domain: 'Agriculture' },

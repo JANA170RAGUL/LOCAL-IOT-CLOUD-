@@ -1,9 +1,5 @@
 """
 app/modules/dashboards
 
-Dashboard definitions composed of widgets for data visualisation.
+User-defined dashboard layouts, themes, and widget placements.
 """
-
-from app.modules.dashboards.api.dashboard_router import router
-
-__all__ = ["router"]

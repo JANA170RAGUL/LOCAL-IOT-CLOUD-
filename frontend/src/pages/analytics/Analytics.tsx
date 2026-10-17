@@ -27,8 +27,12 @@ export const Analytics = () => {
   const { data: licenseStatus, isLoading: isLicenseLoading } = useLicenseStatus();
 
   const isAnalyticsLicensed =
-    licenseStatus?.status === 'ACTIVE' &&
-    (licenseStatus?.features?.analytics || licenseStatus?.features?.Analytics);
+    (licenseStatus?.status === 'ACTIVE' || licenseStatus?.status === 'VALID') &&
+    Boolean(
+      licenseStatus?.features?.analytics ||
+      licenseStatus?.features?.Analytics ||
+      licenseStatus?.plan === 'Enterprise'
+    );
 
   const { data: overview } = usePlatformOverview(isAnalyticsLicensed);
   const { data: liveStatus } = useLiveStatus(isAnalyticsLicensed);

@@ -11,15 +11,20 @@ import {
   Wifi,
   Radio,
   Eye,
+  EyeOff,
   Edit2,
   Trash2,
   ChevronLeft,
   ChevronRight,
   Inbox,
-  Layers
+  Layers,
+  Key,
+  Copy,
+  Check,
+  ShieldCheck,
 } from 'lucide-react';
-import { HierarchySelector } from '../components/HierarchySelector';
-import type { HierarchySelection } from '../components/HierarchySelector';
+import { HierarchySelector } from '../components/HierarchySelector/HierarchySelector';
+import type { HierarchySelection } from '../components/HierarchySelector/HierarchySelector';
 import { DeviceForm } from '../features/devices/components/DeviceForm';
 import {
   useDevicesQuery,
@@ -38,20 +43,25 @@ export const DeviceList: React.FC = () => {
     tenantId: '',
     projectId: '',
     gatewayId: '',
+    deviceId: '',
   });
 
-  // Table state
+  // State
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize] = useState(10);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
-  const [activeChip, setActiveChip] = useState<string>('all');
+  const [activeChip, setActiveChip] = useState('all');
 
-  // Dialog state
   const [formOpen, setFormOpen] = useState(false);
   const [selectedDevice, setSelectedDevice] = useState<DeviceSummary | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DeviceSummary | null>(null);
+  
+  // API Key modal state
+  const [createdDeviceKey, setCreatedDeviceKey] = useState<{ deviceName: string; code: string; apiKey: string } | null>(null);
+  const [showCreatedKey, setShowCreatedKey] = useState(true);
+  const [copiedKey, setCopiedKey] = useState(false);
 
   const { data, isLoading, isError, error } = useDevicesQuery(
     selection.gatewayId,
@@ -74,7 +84,14 @@ export const DeviceList: React.FC = () => {
       if (selectedDevice) {
         await updateMutation.mutateAsync({ id: selectedDevice.id, data: values });
       } else {
-        await createMutation.mutateAsync(values);
+        const newDevice = await createMutation.mutateAsync(values);
+        if (newDevice?.api_key) {
+          setCreatedDeviceKey({
+            deviceName: newDevice.name,
+            code: newDevice.code,
+            apiKey: newDevice.api_key
+          });
+        }
       }
       setFormOpen(false);
       setSelectedDevice(null);
@@ -503,6 +520,78 @@ export const DeviceList: React.FC = () => {
                 className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:opacity-50"
               >
                 {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Device Created API Key Modal */}
+      {createdDeviceKey && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl border border-slate-100 p-6 max-w-lg w-full shadow-2xl space-y-5 animate-in zoom-in-95">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">
+                  Device Created & Key Generated!
+                </h3>
+                <p className="text-xs text-slate-500">
+                  <strong className="text-slate-700">{createdDeviceKey.deviceName}</strong> ({createdDeviceKey.code}) has been registered.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
+                  <Key className="w-4 h-4 text-amber-600" />
+                  Registered Device API Key
+                </span>
+                <span className="text-[11px] font-semibold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md">
+                  Save Key
+                </span>
+              </div>
+
+              <div className="relative flex items-center bg-slate-900 rounded-xl p-3 text-white font-mono text-xs border border-slate-800 shadow-inner">
+                <span className="truncate pr-16 select-all font-bold tracking-wide text-emerald-400">
+                  {showCreatedKey ? createdDeviceKey.apiKey : '••••••••••••••••••••••••••••••••'}
+                </span>
+                <div className="absolute right-2 flex items-center gap-1">
+                  <button
+                    onClick={() => setShowCreatedKey(!showCreatedKey)}
+                    className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-all cursor-pointer"
+                    title={showCreatedKey ? 'Hide Key' : 'Show Key'}
+                  >
+                    {showCreatedKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(createdDeviceKey.apiKey);
+                      setCopiedKey(true);
+                      setTimeout(() => setCopiedKey(false), 2000);
+                    }}
+                    className="flex items-center gap-1 px-2.5 py-1 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white rounded-lg text-xs font-sans font-semibold transition-all cursor-pointer"
+                  >
+                    {copiedKey ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedKey ? 'Copied!' : 'Copy'}</span>
+                  </button>
+                </div>
+              </div>
+
+              <p className="text-[11px] text-amber-800 leading-relaxed">
+                <strong>How to use:</strong> Pass this API Key in your physical device's HTTP headers as <code>X-Device-Key: {createdDeviceKey.apiKey}</code> or as your MQTT broker credential to send telemetry.
+              </p>
+            </div>
+
+            <div className="flex justify-end pt-1">
+              <button
+                onClick={() => setCreatedDeviceKey(null)}
+                className="px-5 py-2.5 bg-[#2563EB] hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer"
+              >
+                Done & Continue
               </button>
             </div>
           </div>

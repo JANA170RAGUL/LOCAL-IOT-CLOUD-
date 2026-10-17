@@ -19,6 +19,9 @@ from app.modules.widgets.schemas.widget import (
 )
 from app.modules.widgets.services.widget_service import WidgetService
 
+from app.core.access_scope import AccessScope, get_access_scope
+from app.core.tenant_guard import TenantGuard
+
 router = APIRouter(
     tags=["Widgets"],
 )
@@ -36,7 +39,9 @@ def create_widget(
     payload: WidgetCreate,
     db: Session = Depends(get_db),
     svc: WidgetService = Depends(get_widget_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> WidgetResponse:
+    TenantGuard.dashboard(db, dashboard_id, scope)
     # License limit check
     current_count = db.query(Widget).count()
     check_feature_limit("widgets", current_count)
@@ -54,7 +59,9 @@ def list_widgets(
     dashboard_id: str,
     db: Session = Depends(get_db),
     svc: WidgetService = Depends(get_widget_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> WidgetListResponse:
+    TenantGuard.dashboard(db, dashboard_id, scope)
     items = svc.list_widgets(db, dashboard_id)
     return WidgetListResponse(
         total=len(items),
@@ -72,7 +79,9 @@ def get_widget(
     widget_id: str,
     db: Session = Depends(get_db),
     svc: WidgetService = Depends(get_widget_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> WidgetResponse:
+    TenantGuard.widget(db, widget_id, scope)
     return svc.get_widget(db, widget_id)
 
 
@@ -87,7 +96,9 @@ def update_widget(
     payload: WidgetUpdate,
     db: Session = Depends(get_db),
     svc: WidgetService = Depends(get_widget_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> WidgetResponse:
+    TenantGuard.widget(db, widget_id, scope)
     return svc.update_widget(db, widget_id, payload)
 
 
@@ -101,5 +112,7 @@ def deactivate_widget(
     widget_id: str,
     db: Session = Depends(get_db),
     svc: WidgetService = Depends(get_widget_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> None:
+    TenantGuard.widget(db, widget_id, scope)
     svc.deactivate_widget(db, widget_id)

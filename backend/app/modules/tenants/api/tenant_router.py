@@ -32,6 +32,9 @@ from app.modules.tenants.schemas.tenant import (
 )
 from app.modules.tenants.services.tenant_service import TenantService
 
+from app.core.access_scope import AccessScope, get_access_scope
+from app.core.tenant_guard import TenantGuard
+
 router = APIRouter(
     tags=["Tenants"],
 )
@@ -53,7 +56,9 @@ def create_tenant(
     payload: TenantCreate,
     db: Session = Depends(get_db),
     svc: TenantService = Depends(get_tenant_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> TenantResponse:
+    TenantGuard.organization(db, organization_id, scope)
     return svc.create_tenant(db, organization_id, payload)
 
 
@@ -80,14 +85,16 @@ def list_tenants(
     page_size: int = Query(DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE, description="Items per page"),
     db: Session = Depends(get_db),
     svc: TenantService = Depends(get_tenant_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> TenantListResponse:
+    TenantGuard.organization(db, organization_id, scope)
     filters = TenantFilter(
         search=search,
         status=tenant_status,
         page=page,
         page_size=page_size,
     )
-    return svc.list_tenants(db, organization_id, filters)
+    return svc.list_tenants(db, organization_id, filters, scope=scope)
 
 
 # ---------------------------------------------------------------------------
@@ -104,7 +111,9 @@ def get_tenant(
     tenant_id: str,
     db: Session = Depends(get_db),
     svc: TenantService = Depends(get_tenant_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> TenantResponse:
+    TenantGuard.tenant(db, tenant_id, scope)
     return svc.get_tenant(db, tenant_id)
 
 
@@ -123,7 +132,9 @@ def patch_tenant(
     payload: TenantUpdate,
     db: Session = Depends(get_db),
     svc: TenantService = Depends(get_tenant_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> TenantResponse:
+    TenantGuard.tenant(db, tenant_id, scope)
     return svc.update_tenant(db, tenant_id, payload)
 
 
@@ -142,7 +153,9 @@ def put_tenant(
     payload: TenantUpdate,
     db: Session = Depends(get_db),
     svc: TenantService = Depends(get_tenant_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> TenantResponse:
+    TenantGuard.tenant(db, tenant_id, scope)
     return svc.update_tenant(db, tenant_id, payload)
 
 
@@ -160,5 +173,7 @@ def delete_tenant(
     tenant_id: str,
     db: Session = Depends(get_db),
     svc: TenantService = Depends(get_tenant_service),
+    scope: AccessScope = Depends(get_access_scope),
 ) -> dict:
+    TenantGuard.tenant(db, tenant_id, scope)
     return svc.deactivate_tenant(db, tenant_id)

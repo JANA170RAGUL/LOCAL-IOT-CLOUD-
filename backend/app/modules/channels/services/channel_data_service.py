@@ -286,13 +286,48 @@ class ChannelDataService:
             
         if df.empty:
             return {"total": 0, "imported": 0, "skipped": 0, "errors": 0}
-            
-        # We expect a 'created_at' or 'timestamp' column
+
+        # 1. Enforce row limit
+        max_rows = getattr(settings, "channel_import_max_rows", 50000)
+        if len(df) > max_rows:
+            raise HTTPException(status_code=413, detail=f"Import exceeds maximum of {max_rows} rows.")
+
+        # 2. Enforce column limit
+        if len(df.columns) > 20:
+            raise HTTPException(status_code=400, detail="Import file contains too many columns (max 20).")
+
+        # 3. Validate columns strictly against channel fields
+        allowed_fields = {f.field_key for f in channel.fields}
+        system_fields = {"timestamp", "created_at", "api_key", "channel_id"}
+        unknown = set(df.columns) - (allowed_fields | system_fields)
+        if unknown:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unknown import columns: {', '.join(sorted(unknown))}",
+            )
+
+        # 4. Identify timestamp column & validate timestamps
         time_col = None
         if "created_at" in df.columns:
             time_col = "created_at"
         elif "timestamp" in df.columns:
             time_col = "timestamp"
+
+        if time_col:
+            try:
+                parsed_ts = pd.to_datetime(df[time_col], utc=True, errors="coerce")
+                if parsed_ts.isna().any():
+                    raise HTTPException(status_code=400, detail="Import contains invalid timestamps.")
+                
+                future_cutoff = datetime.now(timezone.utc) + timedelta(days=1)
+                if (parsed_ts > future_cutoff).any():
+                    raise HTTPException(status_code=400, detail="Import contains timestamps in the future.")
+                
+                df[time_col] = parsed_ts
+            except HTTPException:
+                raise
+            except Exception:
+                raise HTTPException(status_code=400, detail="Failed to parse import timestamps.")
             
         data_list = []
         errors = 0

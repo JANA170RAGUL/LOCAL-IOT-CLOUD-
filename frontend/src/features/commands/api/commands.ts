@@ -13,4 +13,9 @@ export const commandsApi = {
     });
     return response.data;
   },
+
+  cancelCommand: async (commandId: string): Promise<DeviceCommand> => {
+    const response = await apiClient.post(`/commands/${commandId}/cancel`);
+    return response.data;
+  },
 };

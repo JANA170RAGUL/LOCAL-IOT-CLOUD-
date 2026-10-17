@@ -1,3 +1,4 @@
+from typing import Any
 import logging
 import threading
 import time
@@ -38,34 +39,47 @@ class NotificationWorker:
             self._thread = None
             logger.info("NotificationWorker stopped.")
 
-    def _run(self):
-        while not self._stop_event.is_set():
+    def run(self, stop_event: threading.Event = None, heartbeat: Any = None):
+        event = stop_event or self._stop_event
+        while not event.is_set():
+            if heartbeat:
+                heartbeat.beat()
             try:
-                self._process_queue()
+                processed = self._process_queue()
+                if not processed:
+                    event.wait(timeout=self.poll_interval)
             except Exception as e:
                 logger.error(f"Error in NotificationWorker: {e}", exc_info=True)
-            time.sleep(self.poll_interval)
+                event.wait(timeout=1.0)
 
-    def _process_queue(self):
+    def _run(self):
+        self.run(stop_event=self._stop_event)
+
+    def _process_queue(self) -> bool:
         # Use a fresh DB session for each poll iteration
         with SessionLocal() as db:
             repo = NotificationRepository(db)
             pending = repo.get_pending(limit=20)
             
             if not pending:
-                return
+                return False
 
             # Fetch SMTP settings once per batch
             settings_service = SettingsService(db)
             email_settings = settings_service.get_category_settings("email")
             
             if not email_settings or not email_settings.get("smtpHost"):
-                # Mock or unconfigured SMTP
-                self._mock_send_batch(repo, pending)
-                return
+                from app.core.environment import demo_data_allowed
+                from app.config.settings import settings
+                if settings.notification_provider == "console" and demo_data_allowed():
+                    self._mock_send_batch(repo, pending)
+                else:
+                    self._fail_unconfigured_batch(repo, pending)
+                return True
 
             # Real SMTP sending
             self._send_batch(repo, pending, email_settings)
+            return True
 
     def _send_batch(self, repo: NotificationRepository, notifications: list, email_settings: dict):
         host = email_settings.get("smtpHost")
@@ -109,10 +123,16 @@ class NotificationWorker:
                 self._handle_send_error(repo, notification, f"SMTP Connection Error: {e}")
 
     def _mock_send_batch(self, repo: NotificationRepository, notifications: list):
-        """Simulates sending when SMTP is not properly configured."""
+        """Development-only console logging when ALLOW_DEMO_DATA=True and NOTIFICATION_PROVIDER=console."""
         for notification in notifications:
-            logger.info(f"[MOCK EMAIL] To: {notification.recipient} | Subject: {notification.subject}")
+            logger.info(f"[DEV CONSOLE EMAIL] To: {notification.recipient} | Subject: {notification.subject}")
             repo.update_status(notification.id, status="SENT", sent_at=datetime.utcnow())
+
+    def _fail_unconfigured_batch(self, repo: NotificationRepository, notifications: list):
+        """Fails notifications when SMTP provider is unconfigured in production."""
+        for notification in notifications:
+            logger.warning(f"Notification {notification.id} failed: SMTP provider is not configured.")
+            repo.update_status(notification.id, status="FAILED", error_message="SMTP provider is not configured.")
 
     def _handle_send_error(self, repo: NotificationRepository, notification, error_msg: str):
         logger.error(f"Failed to send notification {notification.id}: {error_msg}")

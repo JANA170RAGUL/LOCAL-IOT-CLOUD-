@@ -1,23 +1,30 @@
 import React, { useState } from 'react';
-import { 
-  FileText, 
-  Table, 
-  FileSpreadsheet, 
-  Activity, 
-  Cpu, 
-  ShieldAlert, 
-  Sparkles, 
-  Radio, 
-  LayoutDashboard, 
-  Filter, 
-  Calendar, 
+import {
+  FileText,
+  Table,
+  FileSpreadsheet,
+  Activity,
+  Cpu,
+  ShieldAlert,
+  Sparkles,
+  Radio,
+  LayoutDashboard,
+  Filter,
+  Calendar,
+
+
+
+
+
   Search,
   RefreshCw,
   Lock,
-  Download
+  Download,
+  Layers
 } from 'lucide-react';
 import { PageHeader } from '@/components/PageHeader';
 import { reportsApi, ReportFilter } from '@/features/reports/api/reports';
+import { HierarchySelector, HierarchySelection } from '@/components/HierarchySelector';
 import { useSnackbar } from 'notistack';
 import { useLicenseStatus } from '@/features/settings/api/license';
 
@@ -25,21 +32,54 @@ export const Reports = () => {
   const { enqueueSnackbar } = useSnackbar();
   const [isGenerating, setIsGenerating] = useState<string | null>(null);
   const [filters, setFilters] = useState<ReportFilter>({});
+  const [selection, setSelection] = useState<HierarchySelection>({
+    orgId: '',
+    tenantId: '',
+    projectId: '',
+    gatewayId: '',
+    deviceId: '',
+  });
+
+  const handleHierarchyChange = (newSelection: HierarchySelection) => {
+    setSelection(newSelection);
+    setFilters((prev) => ({
+      ...prev,
+      organization_id: newSelection.orgId || undefined,
+      tenant_id: newSelection.tenantId || undefined,
+      project_id: newSelection.projectId || undefined,
+      gateway_id: newSelection.gatewayId || undefined,
+      device_id: newSelection.deviceId || undefined,
+    }));
+  };
+
+  const handleResetFilters = () => {
+    setSelection({
+      orgId: '',
+      tenantId: '',
+      projectId: '',
+      gatewayId: '',
+      deviceId: '',
+    });
+    setFilters({});
+  };
 
   const { data: licenseStatus } = useLicenseStatus();
   const isLicensed = licenseStatus ? (licenseStatus.status === 'ACTIVE' && licenseStatus.features?.reports) : true;
 
   const handleGenerate = async (reportType: string, format: string) => {
     const actionKey = `${reportType}-${format}`;
+    const emailRecipient = window.prompt("Enter email address to send report (or leave empty to download in browser only):");
+
     setIsGenerating(actionKey);
     try {
       await reportsApi.exportReport({
         report_type: reportType,
         format: format,
-        filters: filters
+        filters: filters,
+        email_to: emailRecipient || undefined
       });
-      enqueueSnackbar(`${reportType.toUpperCase()} report exported as ${format.toUpperCase()}`, { 
-        variant: 'success' 
+      enqueueSnackbar(`${reportType.toUpperCase()} report generated${emailRecipient ? ' & emailed' : ''}!`, {
+        variant: 'success'
       });
     } catch (error) {
       console.error(error);
@@ -102,10 +142,10 @@ export const Reports = () => {
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-12 font-sans text-slate-800 animate-in fade-in duration-300">
-      
+
       {/* Header */}
-      <PageHeader 
-        title="Reports Engine" 
+      <PageHeader
+        title="Reports Engine"
         description="Generate professional PDF, Excel, and CSV analytics reports."
       />
 
@@ -123,41 +163,55 @@ export const Reports = () => {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Organization ID */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
-              <Search className="w-3.5 h-3.5 text-slate-400" /> Organization ID
-            </label>
-            <input
-              type="text"
-              placeholder="e.g. ORG-102"
-              value={filters.organization_id || ''}
-              onChange={(e) => setFilters({ ...filters, organization_id: e.target.value })}
-              className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm focus:ring-4 focus:ring-blue-50 focus:border-[#2563EB] outline-none transition-all"
+        <div className="space-y-4">
+          <div>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <Layers className="w-3.5 h-3.5 text-[#2563EB]" /> Select Organization Scope
+            </span>
+            <HierarchySelector
+              selection={selection}
+              onChange={handleHierarchyChange}
+              maxDepth="device"
+              variant="dropdown"
             />
           </div>
 
-          {/* Start Date */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-slate-400" /> Start Date
-            </label>
-            <input
-              type="date"
-              onChange={(e) => setFilters({ ...filters, start_date: e.target.value })}
-              className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm focus:ring-4 focus:ring-blue-50 focus:border-[#2563EB] outline-none transition-all"
-            />
-          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-3 border-t border-slate-100">
+            {/* Start Date */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-slate-400" /> Start Date
+              </label>
+              <input
+                type="date"
+                value={filters.start_date || ''}
+                onChange={(e) => setFilters({ ...filters, start_date: e.target.value })}
+                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm focus:ring-4 focus:ring-blue-50 focus:border-[#2563EB] outline-none transition-all"
+              />
+            </div>
 
-          {/* Reset Action */}
-          <div className="flex items-end">
-            <button
-              onClick={() => setFilters({})}
-              className="w-full px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 border border-slate-200 transition-all cursor-pointer"
-            >
-              <RefreshCw className="w-4 h-4 text-slate-500" /> Reset Filters
-            </button>
+            {/* End Date */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-slate-400" /> End Date
+              </label>
+              <input
+                type="date"
+                value={filters.end_date || ''}
+                onChange={(e) => setFilters({ ...filters, end_date: e.target.value })}
+                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm focus:ring-4 focus:ring-blue-50 focus:border-[#2563EB] outline-none transition-all"
+              />
+            </div>
+
+            {/* Reset Action */}
+            <div className="flex items-end">
+              <button
+                onClick={handleResetFilters}
+                className="w-full px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 border border-slate-200 transition-all cursor-pointer"
+              >
+                <RefreshCw className="w-4 h-4 text-slate-500" /> Reset Filters
+              </button>
+            </div>
           </div>
         </div>
       </div>

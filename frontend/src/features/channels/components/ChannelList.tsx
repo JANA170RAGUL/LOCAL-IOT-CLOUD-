@@ -12,7 +12,8 @@ import {
   Inbox,
   Globe,
   ShieldCheck,
-  ChevronRight
+  ChevronRight,
+  Trash2
 } from 'lucide-react';
 import { channelsApi, Channel } from '../api/channels';
 
@@ -36,6 +37,19 @@ export const ChannelList: React.FC = () => {
     };
     fetchChannels();
   }, []);
+
+  const handleDeleteChannel = async (e: React.MouseEvent, channel: Channel) => {
+    e.stopPropagation();
+    if (window.confirm(`Are you sure you want to delete channel "${channel.name}"? All associated settings and feeds will be permanently deleted.`)) {
+      try {
+        await channelsApi.deleteChannel(channel.id);
+        setChannels(prev => prev.filter(c => c.id !== channel.id));
+      } catch (error) {
+        console.error("Failed to delete channel", error);
+        alert("Failed to delete channel.");
+      }
+    }
+  };
 
   const filteredChannels = channels.filter(c => {
     const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase()) || 
@@ -236,13 +250,23 @@ export const ChannelList: React.FC = () => {
                   {channel.fields?.length || 0} Fields Configured
                 </span>
 
-                <button
-                  onClick={() => navigate(`/channels/${channel.id}`)}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-50 hover:bg-blue-50 text-slate-700 hover:text-blue-600 border border-slate-200 hover:border-blue-300 rounded-xl text-xs font-semibold transition-all cursor-pointer"
-                >
-                  <span>View Details</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={(e) => handleDeleteChannel(e, channel)}
+                    title="Delete Channel"
+                    className="inline-flex items-center justify-center w-8 h-8 text-slate-400 hover:text-rose-600 bg-slate-50 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 rounded-xl transition-all cursor-pointer"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    onClick={() => navigate(`/channels/${channel.id}`)}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-50 hover:bg-blue-50 text-slate-700 hover:text-blue-600 border border-slate-200 hover:border-blue-300 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+                  >
+                    <span>View Details</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
 
             </div>

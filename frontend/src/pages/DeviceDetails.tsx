@@ -14,11 +14,25 @@ import {
   Activity,
   FileText,
   Terminal,
-  Layers
+  Layers,
+  Key,
+  Copy,
+  Check,
+  RefreshCw,
+  Plus,
+  Eye,
+  EyeOff,
+  ShieldCheck,
 } from 'lucide-react';
-import { useDeviceDetailsQuery } from '../features/devices/hooks/useDevices';
+import { 
+  useDeviceDetailsQuery,
+  useDeviceCredentialsQuery,
+  useCreateDeviceCredentialMutation,
+  useRotateDeviceCredentialMutation,
+} from '../features/devices/hooks/useDevices';
 import { useLatestTelemetryQuery, useTelemetryStream } from '../features/telemetry/hooks/useTelemetry';
 import { DeviceCommandsTab } from './DeviceCommandsTab';
+import { DeviceProvisioningTab } from '../features/device-provisioning/components/DeviceProvisioningTab';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime);
@@ -26,9 +40,18 @@ dayjs.extend(relativeTime);
 export const DeviceDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'overview' | 'telemetry' | 'commands'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'telemetry' | 'commands' | 'provisioning'>('overview');
 
   const { data: device, isLoading, isError, error } = useDeviceDetailsQuery(id ?? '');
+
+  // Device Credentials Hooks
+  const { data: credentials } = useDeviceCredentialsQuery(id ?? '');
+  const createCredMutation = useCreateDeviceCredentialMutation(id ?? '');
+  const rotateCredMutation = useRotateDeviceCredentialMutation(id ?? '');
+
+  const [newGeneratedKey, setNewGeneratedKey] = useState<string | null>(null);
+  const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
+  const [showSecretKey, setShowSecretKey] = useState(false);
 
   // Live Telemetry
   const { data: telemetry } = useLatestTelemetryQuery(id ?? '');
@@ -117,11 +140,12 @@ export const DeviceDetails: React.FC = () => {
           </div>
 
           {/* Navigation Tabs Bar */}
-          <div className="flex items-center gap-2 border-b border-slate-200 bg-white px-2 pt-2 rounded-2xl border border-slate-200/90 shadow-2xs">
+          <div className="flex flex-wrap items-center gap-3 p-2 rounded-2xl neu-flat">
             {[
               { id: 'overview', label: 'Hardware Overview', icon: Cpu },
               { id: 'telemetry', label: 'Live Telemetry', icon: Activity },
               { id: 'commands', label: 'Command Console', icon: Terminal },
+              { id: 'provisioning', label: 'Provisioning', icon: Radio },
             ].map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -130,13 +154,13 @@ export const DeviceDetails: React.FC = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex items-center gap-2 px-4 py-3 text-xs font-bold transition-all border-b-2 cursor-pointer ${
+                  className={`flex items-center gap-2 px-5 py-3 text-xs font-bold transition-all rounded-xl cursor-pointer ${
                     isActive
-                      ? 'border-[#2563EB] text-[#2563EB]'
-                      : 'border-transparent text-slate-500 hover:text-slate-900'
+                      ? 'neu-pressed text-[#2563EB] font-extrabold scale-98'
+                      : 'neu-button text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  <Icon className="w-4 h-4" />
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-[#2563EB]' : 'text-slate-500'}`} />
                   <span>{tab.label}</span>
                 </button>
               );
@@ -225,6 +249,123 @@ export const DeviceDetails: React.FC = () => {
 
               </div>
 
+              {/* Device API Credentials Card */}
+              <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
+                    <Key className="w-4 h-4 text-[#2563EB]" />
+                    <span>Device Credentials & API Key</span>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const res = await createCredMutation.mutateAsync('Primary Key');
+                        if (res?.api_key) setNewGeneratedKey(res.api_key);
+                      } catch (err) {
+                        console.error(err);
+                      }
+                    }}
+                    disabled={createCredMutation.isPending}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-[#2563EB] rounded-xl text-xs font-bold transition-all cursor-pointer border border-blue-200"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>{createCredMutation.isPending ? 'Generating...' : 'Generate New Key'}</span>
+                  </button>
+                </div>
+
+                {/* Display newly generated raw key banner if available */}
+                {newGeneratedKey && (
+                  <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl space-y-2.5 animate-in fade-in">
+                    <div className="flex items-center justify-between text-xs font-bold text-emerald-800">
+                      <span className="flex items-center gap-1.5">
+                        <ShieldCheck className="w-4 h-4 text-emerald-600" /> Newly Generated API Key
+                      </span>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(newGeneratedKey);
+                          setCopiedKeyId('NEW');
+                          setTimeout(() => setCopiedKeyId(null), 2000);
+                        }}
+                        className="flex items-center gap-1 px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-sans font-semibold transition-all cursor-pointer shadow-xs"
+                      >
+                        {copiedKeyId === 'NEW' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>{copiedKeyId === 'NEW' ? 'Copied!' : 'Copy API Key'}</span>
+                      </button>
+                    </div>
+                    <div className="bg-slate-900 text-emerald-400 p-3 rounded-xl font-mono text-xs overflow-x-auto border border-slate-800 flex items-center justify-between">
+                      <span className="font-bold select-all">{showSecretKey ? newGeneratedKey : '••••••••••••••••••••••••••••••••'}</span>
+                      <button
+                        onClick={() => setShowSecretKey(!showSecretKey)}
+                        className="ml-2 text-slate-400 hover:text-white p-1 transition-all cursor-pointer"
+                        title={showSecretKey ? 'Hide Secret' : 'Show Secret'}
+                      >
+                        {showSecretKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-emerald-700">
+                      <strong>Usage:</strong> Pass this key in device HTTP headers as <code>X-Device-Key: {newGeneratedKey}</code> or use it as your MQTT password.
+                    </p>
+                  </div>
+                )}
+
+                {/* Credentials List */}
+                <div className="space-y-2.5 text-xs">
+                  {credentials && credentials.length > 0 ? (
+                    credentials.map((cred: any) => (
+                      <div key={cred.id} className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-100">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-900">{cred.name || 'Device Key'}</span>
+                            <span className={`px-2 py-0.5 text-[10px] font-extrabold rounded-md ${cred.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>
+                              {cred.is_active ? 'ACTIVE' : 'REVOKED'}
+                            </span>
+                          </div>
+                          <p className="font-mono text-slate-500 text-[11px]">Key ID: <span className="font-bold text-slate-700">{cred.key_id}</span></p>
+                        </div>
+
+                        {cred.is_active && (
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(cred.key_id);
+                                setCopiedKeyId(cred.id);
+                                setTimeout(() => setCopiedKeyId(null), 2000);
+                              }}
+                              className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer shadow-xs"
+                              title="Copy Key ID"
+                            >
+                              {copiedKeyId === cred.id ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-slate-500" />}
+                              <span>{copiedKeyId === cred.id ? 'Copied' : 'Copy ID'}</span>
+                            </button>
+
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const rotated = await rotateCredMutation.mutateAsync(cred.id);
+                                  if (rotated?.api_key) setNewGeneratedKey(rotated.api_key);
+                                } catch (err) {
+                                  console.error(err);
+                                }
+                              }}
+                              disabled={rotateCredMutation.isPending}
+                              className="px-3 py-1.5 bg-white border border-amber-200 hover:bg-amber-50 text-amber-700 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer shadow-xs"
+                              title="Rotate Key (Revokes current and generates new API key)"
+                            >
+                              <RefreshCw className="w-3.5 h-3.5 text-amber-500" />
+                              <span>Rotate Key</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-4 bg-slate-50 rounded-xl text-slate-500 text-center font-medium">
+                      No active credentials recorded for this device. Click <strong className="text-slate-700">"Generate New Key"</strong> above to create an API key.
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Network Specs & Description */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs space-y-4">
@@ -296,6 +437,11 @@ export const DeviceDetails: React.FC = () => {
             <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs">
               <DeviceCommandsTab deviceId={device.id} />
             </div>
+          )}
+
+          {/* Tab 4: Provisioning */}
+          {activeTab === 'provisioning' && (
+            <DeviceProvisioningTab deviceId={device.id} />
           )}
 
         </div>

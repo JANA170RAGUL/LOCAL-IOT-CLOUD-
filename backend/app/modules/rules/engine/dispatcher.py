@@ -148,14 +148,11 @@ class ActionDispatcher:
             return
 
         try:
-            client = mqtt.Client()
-            if settings.mqtt_username:
-                client.username_pw_set(
-                    username=settings.mqtt_username,
-                    password=settings.mqtt_password or None,
-                )
-            client.connect(settings.mqtt_host, settings.mqtt_port, keepalive=60)
-            client.publish(topic, payload)
+            from app.core.mqtt_client_factory import create_mqtt_client
+            client = create_mqtt_client(client_id=f"{settings.mqtt_client_id}-rule-action")
+            port = getattr(settings, "mqtt_effective_port", settings.mqtt_port)
+            client.connect(settings.mqtt_host, port, keepalive=60)
+            client.publish(topic, payload, qos=1)
             client.disconnect()
             logger.info(f"MQTT action published to topic '{topic}' with payload '{payload}'.")
         except Exception as e:

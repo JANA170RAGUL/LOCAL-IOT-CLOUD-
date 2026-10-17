@@ -47,9 +47,15 @@ class ChannelField(BaseModel):
 class ChannelApiKey(BaseModel):
     __tablename__ = "channel_api_keys"
 
-    channel_id = Column(String(36), ForeignKey("channels.id", ondelete="CASCADE"), nullable=False)
+    channel_id = Column(String(36), ForeignKey("channels.id", ondelete="CASCADE"), nullable=False, index=True)
+    key_id = Column(String(32), unique=True, index=True, nullable=False)
+    key_hash = Column(String(64), nullable=False)
     key_type = Column(Enum(ApiKeyType), nullable=False)
-    api_key = Column(String(64), unique=True, index=True, nullable=False)
+    name = Column(String(100), nullable=False, default="Primary")
+    expires_at = Column(DateTime(timezone=True), nullable=True)
+    last_used_at = Column(DateTime(timezone=True), nullable=True)
+    revoked_at = Column(DateTime(timezone=True), nullable=True)
+    api_key = Column(String(255), nullable=True)
 
     # Relationship
     channel = relationship("Channel", back_populates="api_keys")
@@ -68,7 +74,7 @@ class ChannelWebhook(BaseModel):
     name = Column(String(255), nullable=False)
     target_url = Column(Text, nullable=False)
     webhook_type = Column(Enum(WebhookType), default=WebhookType.HTTP, nullable=False)
-    secret_token = Column(String(255), nullable=True)
+    secret_encrypted = Column(String(512), nullable=True)
     auth_header = Column(String(255), nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
     max_retries = Column(Integer, default=3, nullable=False)

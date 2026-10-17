@@ -11,8 +11,6 @@ class Role(str, Enum):
     ORG_ADMIN = "Org Admin"
     OPERATOR = "Operator"
     VIEWER = "Viewer"
-    DEVELOPER = "Developer"
-    ADMIN = "Admin"
 
 ROLE_PERMISSIONS: dict[Role, List[str]] = {
     Role.SUPER_ADMIN: ["*"], # Super Admin has all permissions
@@ -55,41 +53,6 @@ ROLE_PERMISSIONS: dict[Role, List[str]] = {
         "view:dashboards",
         "view:telemetry",
         "view:alerts"
-    ],
-    Role.DEVELOPER: [
-        "user:read",
-        "view:telemetry",
-        "view:dashboards",
-        "view:projects",
-        "view:gateways",
-        "view:devices",
-        "view:sensors",
-        "create:devices",
-        "edit:devices",
-        "create:sensors",
-        "edit:sensors",
-        "create:rules",
-        "edit:rules"
-    ],
-    Role.ADMIN: [
-        "system:admin",
-        "user:create",
-        "user:read",
-        "user:update",
-        "user:delete",
-        "organization:read",
-        "organization:update",
-        "project:create",
-        "project:read",
-        "project:update",
-        "project:delete",
-        "view:telemetry",
-        "ack:alerts",
-        "view:dashboards",
-        "view:projects",
-        "view:gateways",
-        "view:devices",
-        "view:sensors"
     ]
 }
 

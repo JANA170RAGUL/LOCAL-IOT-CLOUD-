@@ -1,6 +1,9 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional
 from datetime import datetime
+from app.core.constants import UserRole
+
+VALID_ROLES = {role.value for role in UserRole}
 
 class UserBase(BaseModel):
     first_name: str = Field(..., max_length=100)
@@ -11,6 +14,13 @@ class UserBase(BaseModel):
     organization_id: Optional[str] = None
     tenant_id: Optional[str] = None
 
+    @field_validator("role")
+    @classmethod
+    def validate_role(cls, v: str) -> str:
+        if v not in VALID_ROLES:
+            raise ValueError(f"Invalid role: '{v}'. Must be one of: {', '.join(sorted(VALID_ROLES))}")
+        return v
+
 class UserCreate(UserBase):
     password: str = Field(..., min_length=8)
 
@@ -19,6 +29,15 @@ class UserUpdate(BaseModel):
     last_name: Optional[str] = Field(None, max_length=100)
     phone: Optional[str] = Field(None, max_length=50)
     role: Optional[str] = Field(None, max_length=50)
+    status: Optional[str] = Field(None, max_length=50)
+
+    @field_validator("role")
+    @classmethod
+    def validate_role(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and v not in VALID_ROLES:
+            raise ValueError(f"Invalid role: '{v}'. Must be one of: {', '.join(sorted(VALID_ROLES))}")
+        return v
+
 
 class UserResponse(UserBase):
     id: str

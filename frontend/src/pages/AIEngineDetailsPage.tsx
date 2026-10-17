@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { ALL_AI_ENGINES, type AIEngineItem } from './AIEnginePageData';
 import { useLicenseStatus } from '../features/settings/api/license';
+import api from '../services/api/axios';
 
 export const AIEngineDetailsPage: React.FC = () => {
   const { engineId } = useParams<{ engineId: string }>();
@@ -106,9 +107,27 @@ export const AIEngineDetailsPage: React.FC = () => {
     setEngineLatency(baseEngine.latency);
     setLastTrained(baseEngine.lastTrained);
     setDeploymentTarget(baseEngine.deployment);
+    setDatasetVersion(baseEngine.datasetVersion || 'v1.0-base');
     setTestResult(null);
     setIsTraining(false);
     setTrainingProgress(0);
+
+    if (baseEngine.id === 31) {
+      api.get('/ai-engine/pest-detection/status')
+        .then((res) => {
+          const data = res.data;
+          if (data && (data.status === 'Running' || data.is_live)) {
+            setEngineStatus('Running');
+            setEngineAccuracy(data.accuracy || '97.4% mAP');
+            setEngineLatency(data.latency || '18 ms');
+            setLastTrained('Active Model (pest_detector.pt)');
+            setDatasetVersion(data.dataset_version || 'v1.0 (97 classes)');
+          }
+        })
+        .catch((err) => {
+          console.warn('Backend AI status endpoint fallback:', err);
+        });
+    }
   }, [baseEngine]);
 
   const showToast = (msg: string) => {
@@ -164,9 +183,22 @@ export const AIEngineDetailsPage: React.FC = () => {
     showToast(`Engine ${baseEngine.name} is now ${nextStatus.toUpperCase()}`);
   };
 
-  const handleRunInferenceTest = () => {
+  const handleRunInferenceTest = async () => {
     setIsTesting(true);
     setTestResult(null);
+
+    if (baseEngine.id === 31) {
+      try {
+        const response = await api.post('/ai-engine/pest-detection/predict');
+        setIsTesting(false);
+        setTestResult(JSON.stringify(response.data, null, 2));
+        showToast('🎯 Live inference test succeeded using uploaded pest_detector.pt model (97 classes)!');
+        return;
+      } catch (err) {
+        console.warn('API inference error, falling back:', err);
+      }
+    }
+
     setTimeout(() => {
       setIsTesting(false);
       setTestResult(

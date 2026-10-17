@@ -148,6 +148,11 @@ export const HierarchySelector: React.FC<HierarchySelectorProps> = ({
   const smSize = 12 / Math.min(columnCount, 3); // Max 3 per row on tablet
   const mdSize = 12 / Math.min(columnCount, 5); // Fit up to 5 on desktop
 
+  const MENU_PROPS = {
+    style: { zIndex: 100000 },
+    PopoverProps: { style: { zIndex: 100000 } },
+  };
+
   return (
     <Grid container spacing={2} sx={{ alignItems: 'center' }}>
       <Grid size={{ xs: xsSize, sm: smSize, md: mdSize }}>
@@ -159,6 +164,7 @@ export const HierarchySelector: React.FC<HierarchySelectorProps> = ({
             value={orgId}
             onChange={(e) => handleOrgChange(e.target.value)}
             disabled={orgsLoading || (hasSingleOrg && !isVendorRole)}
+            MenuProps={MENU_PROPS}
           >
             <MenuItem value="">— Select —</MenuItem>
             {orgsData?.items.map((org) => (
@@ -179,6 +185,7 @@ export const HierarchySelector: React.FC<HierarchySelectorProps> = ({
               label="Tenant"
               value={tenantId}
               onChange={(e) => handleTenantChange(e.target.value)}
+              MenuProps={MENU_PROPS}
             >
               <MenuItem value="">— Select —</MenuItem>
               {tenantsData?.items.map((tenant) => (
@@ -200,6 +207,7 @@ export const HierarchySelector: React.FC<HierarchySelectorProps> = ({
               label="Project"
               value={projectId}
               onChange={(e) => handleProjectChange(e.target.value)}
+              MenuProps={MENU_PROPS}
             >
               <MenuItem value="">— Select —</MenuItem>
               {projectsData?.items.map((project) => (
@@ -221,6 +229,7 @@ export const HierarchySelector: React.FC<HierarchySelectorProps> = ({
               label="Gateway"
               value={gatewayId}
               onChange={(e) => handleGatewayChange(e.target.value)}
+              MenuProps={MENU_PROPS}
             >
               <MenuItem value="">— Select —</MenuItem>
               {gatewaysData?.items.map((gateway) => (
@@ -242,6 +251,7 @@ export const HierarchySelector: React.FC<HierarchySelectorProps> = ({
               label="Device"
               value={deviceId}
               onChange={(e) => handleDeviceChange(e.target.value)}
+              MenuProps={MENU_PROPS}
             >
               <MenuItem value="">— Select —</MenuItem>
               {devicesData?.items.map((device) => (
